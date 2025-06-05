@@ -2,7 +2,7 @@
 --- Agent ID: ALU-003 ---
 
 --- Initial Assessment (from Contextual Inquiry) ---
-This alert, identified by MITRE Technique T1014 (Rootkit), indicates a possible kernel-level rootkit installation on 'ALU-ORDPROC-PROD-01'. The key Cybersecurity Dimensions for initial investigation are: Process Behavior (to analyze the hidden process '2508'), Host Vulnerability (to check for known exploits affecting 'ALU-ORDPROC-PROD-01'), and Contextual Dimension (to evaluate the criticality of the affected asset).
+This alert, identified by MITRE Technique T1014 (Rootkit), suggests the presence of a rootkit on 'ALU-ORDPROC-PROD-01'. The key Cybersecurity Dimensions are: Process Behavior (to examine hidden processes), Host Vulnerability (assess OS version and patch status), User Attribution (identify the affected user/group), Network Behavior (monitor for unusual traffic patterns), IOC in Threat Intel (search for known rootkit signatures), and Contextual Dimension (understand the criticality of the affected asset).
 
 --- Validated IOCs Used for Plan Generation ---
 {
@@ -14,334 +14,444 @@ This alert, identified by MITRE Technique T1014 (Rootkit), indicates a possible 
   "Agent ID": "ALU-003",
   "Agent Hostname": "ALU-ORDPROC-PROD-01",
   "Agent IP": "10.60.5.25",
+  "Group": "aluskort-prod",
   "Title": "Process '2508' hidden from /proc.",
-  "Location": "rootcheck",
   "Decoder": "rootcheck"
 }
 
 --- Detailed Investigative Questions and Plans ---
 
-Question 1: Is process '2508' visible in standard Linux process listings (/proc)?
+Question 1: What is the exact name and path of the hidden process '2508'?
 Detailed Plan:
 **Investigative Plan:**
-*   Objective: Confirm whether process '2508' is indeed hidden from standard Linux process listings (/proc).
-
-*   Key Data Sources/Tools (Prioritized):
-    1.  **Linux Command Line:** Use `ps aux | grep 2508` and `/proc/<pid>/status` to verify process visibility.
-    2.  **Velociraptor:** Query endpoint to check process status across hosts.
-    3.  **Wazuh API:** Search logs for related events (e.g., rootcheck alerts, suspicious processes).
-
-*   Steps & Example Commands/Queries:
-    1.  **Linux CLI (Local Machine):**
-        * Run: `ps aux | grep 2508` to see if process is listed.
-        * Check `/proc/<pid>/status` to confirm its existence.
-    2.  **Velociraptor (Endpoint Query):**
-        * Query: `SELECT * FROM Artifact.Linux.Processes()`
-        * Filter by PID: `WHERE pid = 2508`.
-    3.  **Wazuh API (Log Search):**
-        * Endpoint: `GET /logs/alerts?q=rootcheck AND process:2508`
-        * Look for alerts mentioning process '2508'.
-
-*   Expected Outcome/Interpretation:
-    - ✅ If process '2508' appears in both ps and procfs, it’s normal.
-    - ❌ If process is invisible, escalate to deeper analysis (kernel modules, syscalls, memory forensics).
---------------------------------------------------
-
-Question 2: What is the parent process of '2508'?
-Detailed Plan:
-**Investigative Plan:**
-*   **Objective:** Identify the parent process of PID '2508' to determine its origin and legitimacy.
+*   **Objective:** Identify the full path and executable name of the hidden process '2508'.
 
 *   **Key Data Sources/Tools (Prioritized):**
-    1.  **Velociraptor:** Gather process lineage and related metadata.
-    2.  **Sysdig Falco Logs:** Look for suspicious parent-child relationships.
-    3.  **Linux Auditd Logs:** Analyze system-wide events for anomalies.
+    1.  **Linux Audit Logs (Recommended):** Use Linux Audit framework to track system calls related to hiding processes.
+    2.  **Process Explorer (Alternative):** Run a local tool to enumerate all running processes and compare against `/proc`.
+    3.  **Velocirator (Alternative):** Query Velociraptor to collect process lists and match hidden entries.
 
 *   **Steps & Example Commands/Queries:**
-    1.  **Velociraptor (PID '2508'):**
-        *   Query to retrieve process ancestry:
+    1.  **Audit Log Analysis (Preferred Method):**
+        *   Enable Audit Logging:
+            ```bash
+            # Add rules for process hiding
+            echo '-a always,exit -F arch=b64 -S hide_pid -S hide_pid_namespace -S hide_pid_recursively -S hide_pid_thread -S hide_task_prctl -S hide_stacktrace -S hide_trace -S hide_brk -S hide_dumps -S hide_module -S hide_oom_adj -S hide_mempolicy -S hide_mount -S hide_self -S hide_stack -S hide_tgid_fd -S hide_unshare -S hide_getcpu -S hide_gettimeofday -S hide_sched -S hide_setxid -S hide_sendmsg -S hide_recvmsg -S hide_socketpair -S hide_clone -S hide_execve -S hide_fork -S hide_vfork -S hide_rt_sigreturn -S hide_open -S hide_openat -S hide_rename -S hide_link -S hide_symlink -S hide_readlink -S hide_unlink -S hide_unlinkat -S hide_chdir -S hide_chroot -S hide_chmod -S hide_chown -S hide_utime -S hide_statfs -S hide_lstat -S hide_stat -S hide_lseek -S hide_pivot_root -S hide_dup -S hide_dup2 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -S hide_dup3 -
+--------------------------------------------------
+
+Question 2: How long has the process '2508' been active on 'ALU-ORDPROC-PROD-01'?
+Detailed Plan:
+**Investigative Plan:**
+*   Objective: Determine when process '2508' started running on host 'ALU-ORDPROC-PROD-01'.
+
+*   Key Data Sources/Tools (Prioritized):
+    1.  **Process Execution Logs (Sysmon, Wazuh, Elastic Agent):** Look for creation events (`EventID:1`) matching PID '2508'.
+    2.  **Host-based Activity Monitoring (Velociraptor, Osquery, Carbon Black):** Query for recent process start times.
+    3.  **Endpoint Detection & Response (EDR) (CrowdStrike, SentinelOne):** Check for behavioral anomalies tied to '2508'.
+
+*   Steps & Example Commands/Queries:
+    1.  **Process Creation Log Search:**
+        * Sysmon/Wazuh/Elastic:
+            ```kusto
+            | where EventID == 1
+            | where pid == 2508
+            ```
+        * Velociraptor:
+            ```sql
+            SELECT * FROM Artifact.ProcessCreation()
+            WHERE pid = 2508
+            ```
+        * CrowdStrike/SentinelOne:
+            ```powershell
+            Get-CVEvidence -ProcessId 2508
+            ```
+
+    2.  **Recent Process Start Times:**
+        * Osquery:
+            ```bash
+            select pid, comm, start_time from processes;
+            ```
+        * Carbon Black:
+            ```python
+            cb.events.processes().filter(pid=2508).get()
+            ```
+
+    3.  **Behavior Analysis (EDR):**
+        * CrowdStrike/SentinelOne:
+            ```powershell
+            Get-CVEvidence -ProcessId 2508 -IncludeBehavior
+            ```
+
+*   Expected Outcome/Interpretation:
+    - ✅ If the process was created recently (<30 mins), it could be benign (new service, test script).
+    - ❌ If the process has been running for days without being noticed, escalate for deeper inspection.
+--------------------------------------------------
+
+Question 3: What other processes or services are running under the same user context as '2508'?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Identify additional processes or services running under the same user context as PID '2508'.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Velocirator:** Use Velociraptor to query the host for all active processes and their associated users.
+    2.  **Sysmon Event Logs:** Review Sysmon event logs to identify any suspicious parent-child relationships between processes.
+    3.  **Windows Task Manager:** Manually inspect the list of running processes to cross-reference with Velociraptor results.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **Velociraptor Query:** Run the following command to retrieve a list of all active processes along with their PIDs, usernames, and command-line arguments:
+        ```bash
+        artifact linux.processes()
+        ```
+        *   Expected Output: A table showing process names, PIDs, usernames, and command-line arguments.
+        *   Look For: Processes running under the same user context as PID '2508'.
+        *   Relevance: Identifying these processes will help determine if there are any unauthorized or malicious activities occurring under the same user context.
+
+    2.  **Sysmon Event Log Analysis:**
+        *   Query: Search for Sysmon events related to process creation and termination.
+            ```xml
+            <QueryList>
+                <Query Id="ProcessEvents">
+                    <Select Path="Microsoft-Windows-Sysmon/Operational">*[EventData[Data[@Name='UtcTime'] >= '2024-05-21T10:00:00Z']]</Select>
+                </Query>
+            </QueryList>
+            ```
+        *   Expected Output: Events showing process creation and termination, including process IDs, parent process IDs, and user contexts.
+        *   Look For: Parent-child relationships between processes, especially those initiated by the same user context as PID '2508'.
+        *   Relevance: This will help trace the lineage of processes and identify any potentially malicious activities.
+
+    3.  **Windows Task Manager Inspection:**
+        *   Manual Steps: Open Windows Task Manager and navigate to the 'Processes' tab.
+        *   Expected Output: A list of running processes, including their PIDs, usernames, and command-line arguments.
+        *   Look For: Processes running under the same user context as PID '2508'. Additionally, look for any unusual or unexpected processes that could indicate malicious activity.
+        *   Relevance: This manual verification can help ensure that no critical processes were missed during automated queries.
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If multiple processes are identified running under the same user context as PID '2508', investigate further to determine if they are legitimate or part of a malicious operation.
+    - ❌ If no other processes are found running under the same user context, consider the possibility of a stealthy rootkit hiding its presence through process injection or other evasion techniques.
+--------------------------------------------------
+
+Question 4: Have any recent changes been made to the kernel or system binaries on 'ALU-ORDPROC-PROD-01'?
+Detailed Plan:
+**Investigative Plan:***   Objective: Identify unauthorized modifications to the kernel or critical system files on 'ALU-ORDPROC-PROD-01'.
+
+*   Key Data Sources/Tools (Prioritized):
+    1.  **Velociraptor (Host: ALU-ORDPROC-PROD-01)**:
+        *   Query for modified kernel modules (`lsmod`) and system binaries (`find /bin -mtime -30`).
+        *   Use Velociraptor’s artifact collection for `/boot/*`, `/lib/modules/*`, `/sbin/init`, `/usr/sbin/sshd`.
+    2.  **OSSEC HIDS (Agent ID: ALU-003)**:
+        *   Review `/var/ossec/logs/alerts.log` for any root-level file changes.
+        *   Look for `syslog` entries related to `chmod`, `chown`, or `mv` on critical directories.
+    3.  **Linux Audit Logs (Agent ID: ALU-003)**:
+        *   Query for events matching `auid!=4294967295` and `syscall=execve` on `/bin/*`, `/sbin/*`, `/usr/bin/*`.
+        *   Check for unexpected `mount` operations or `pivot_root` usage.
+    4.  **Wazuh API (Agent ID: ALU-003)**:
+        *   Search for `file_integrity` alerts triggered by `rootcheck`.
+        *   Check for `process_exec` events involving `/bin/sh`, `/sbin/mount`, or `/usr/bin/pivot_root`.
+
+*   Steps & Example Commands/Queries:
+    1.  **Velociraptor (Host: ALU-ORDPROC-PROD-01)**:
+        *   Query for modified kernel modules:
+            ```bash
+            lsmod | grep -vE "^Module|^Kernel"
+            ```
+        *   Find recently changed system binaries:
+            ```bash
+            find /bin -mtime -30 -type f
+            ```
+        *   Collect artifacts:
+            ```bash
+            collect_artifact("/boot/*");
+            collect_artifact("/lib/modules/*");
+            collect_artifact("/sbin/init");
+            collect_artifact("/usr/sbin/sshd");
+            ```
+    2.  **OSSEC HIDS (Agent ID: ALU-003)**:
+        *   Search for root-level file changes:
+            ```bash
+            grep -i "changed.*by root" /var/ossec/logs/alerts.log
+            ```
+        *   Look for suspicious `chmod`, `chown`, or `mv` commands:
+            ```bash
+            grep -i "chmod|chown|mv" /var/ossec/logs/alerts.log
+            ```
+    3.  **Linux Audit Logs (Agent ID: ALU-003)**:
+        *   Query for execve events on critical directories:
+            ```bash
+            ausearch -ts recent -m execve -k privileged -p 0 -f "/bin/*,/sbin/*,/usr/bin/*"
+            ```
+        *   Check for unexpected mount operations:
+            ```bash
+            ausearch -ts recent -m mount -k privileged -p 0 -f "/bin/*,/sbin/*,/usr/bin/*"
+            ```
+        *   Search for pivot_root usage:
+            ```bash
+            ausearch -ts recent -m pivot_root -k privileged -p 0 -f "/bin/*,/sbin/*,/usr/bin/*"
+            ```
+    4.  **Wazuh API (Agent ID: ALU-003)**:
+        *   Search for file integrity alerts:
+            ```http
+            GET /alerts/file_integrity?agent_id=ALU-003&rule_id=rootcheck
+            ```
+        *   Check for process execution events:
+            ```http
+            GET /alerts/process_exec?agent_id=ALU-003&q=/bin/sh|/sbin/mount|/usr/bin/pivot_root
+            ```
+
+*   Expected Outcome/Interpretation:
+    - ✅ If Velociraptor finds altered kernel modules or system binaries, investigate their hash/signature against trusted versions.
+    - ❌ If OSSEC or Wazuh detect unauthorized file changes, review timestamps and compare with legitimate updates.
+    - ❌ If Linux Audit Logs reveal unexpected `execve`, `mount`, or `pivot_root` calls, correlate them with running processes.
+--------------------------------------------------
+
+Question 5: Is the agent 'ALU-003' still reporting normally from 'ALU-ORDPROC-PROD-01'?
+Detailed Plan:
+**Investigative Plan:**
+*   Objective: Confirm if the agent 'ALU-003' continues to report correctly after detecting a possible rootkit via Rule ID 521.
+
+*   Key Data Sources/Tools (Prioritized):
+    1.  Velociraptor (Agent ID: ALU-003):
+        * Query to check active sessions:
         ```sql
-        SELECT pid, ppid, exe, cmdline FROM ProcessAncestry(pid=2508)
+        SELECT * FROM Session WHERE AgentID = 'ALU-003' ORDER BY LastSeen DESC LIMIT 10;
         ```
-        *   Expected Output: Parent PIDs and executable paths.
-
-    2.  **Falco Sysdig Logs (Host: ALU-ORDPROC-PROD-01):**
-        *   Query to filter for suspicious parent processes:
-        ```bash
-        falco | grep '2508' | grep -v '2508' | awk '{print $1}' | sort | uniq -c | sort -nr
+        * Look for recent logins, last heartbeat, and session status.
+    2.  Wazuh API (Agent ID: ALU-003):
+        * Fetch latest alerts:
+        ```http
+        GET /agents/ALU-003/alerts?limit=20&sort=-timestamp
         ```
-        *   Expected Output: Count of occurrences and parent PIDs.
-
-    3.  **Auditd Logs (Host: ALU-ORDPROC-PROD-01):**
-        *   Query to extract process creation events:
-        ```bash
-        journalctl _COMM=auditd | grep 'execve' | grep '2508' | cut -f 2 -d '=' | sort | uniq -c | sort -nr
+        * Ensure there are no critical errors or repeated failures.
+    3.  Splunk (Host: ALU-ORDPROC-PROD-01):
+        * Search Syslog or Security Events:
+        ```http
+        index="wazuh_logs" sourcetype="wazuh-security-events" | stats count by dest, eventtype
         ```
-        *   Expected Output: Count of execve events and parent PIDs.
-
-*   **Expected Outcome/Interpretation:**
-    - ✅ If the parent process is a legitimate service or application (e.g., `sshd`, `systemd-journald`), it’s likely benign.
-    - ❌ If the parent is unknown or suspicious (e.g., `/usr/bin/python`), escalate for deeper inspection.
---------------------------------------------------
-
-Question 3: What capabilities does '2508' possess?
-Detailed Plan:
-**Investigative Plan:**
-*   **Objective:** Identify what privileges and capabilities the suspicious process '2508' possesses on the host 'ALU-ORDPROC-PROD-01'.
-
-*   **Key Data Sources/Tools (Prioritized):**
-    1.  **Velociraptor:** Query Velociraptor to gather detailed information about the process '2508' including its parent processes, open files, network connections, loaded modules, and environment variables.
-    2.  **Sysmon Logs:** Review Sysmon logs to identify any unusual activities performed by the process '2508' such as file modifications, registry changes, or network communications.
-    3.  **Process Explorer:** Use Process Explorer to inspect the process '2508' and determine its parent process, loaded DLLs, and any associated services.
-
-*   **Steps & Example Commands/Queries:**
-    1.  **Velociraptor Query:** Run the following query in Velociraptor to collect detailed information about the process '2508':
-        ```bash
-        SELECT * FROM ProcessInfo WHERE pid = 2508;
-        ```
-        This will return information such as the process name, command line arguments, parent PID, open handles, and more.
-    2.  **Sysmon Log Analysis:** Use the following KQL query in Wazuh to analyze Sysmon logs related to the process '2508':
-        ```kusto
-        EventID == 1 and ProcessId == 2508
-        ```
-        This will retrieve all events related to process creation with PID 2508.
-    3.  **Process Explorer Inspection:** Open Process Explorer and locate the process '2508'. Right-click on the process and select Properties to view its properties, loaded modules, and dependencies.
-
-*   **Expected Outcome/Interpretation:**
-    - ✅ If the process '2508' is identified as a legitimate system process or service, no further action is required.
-    - ❌ If the process '2508' is not recognized or appears suspicious based on its parent process, loaded modules, or network activity, proceed to the next step.
-    - ❌ If the process '2508' exhibits signs of malicious behavior such as unauthorized file modifications, registry changes, or network communications, escalate the incident for further investigation.
---------------------------------------------------
-
-Question 4: Can you retrieve the full command line of '2508' from memory dumps?
-Detailed Plan:
-**Investigative Plan:
-*   Objective: Recover the exact command executed by PID '2508' using memory forensics techniques.
-
-*   Key Data Sources/Tools (Prioritized):
-    1.  Velociraptor Memory Analysis Module: Extract process command line arguments from memory dump.
-    2.  Volatility Framework: Use plugins like 'pslist' and 'psscan' to enumerate processes and extract command lines.
-    3.  Yara Rules: Look for suspicious strings or patterns in memory that might indicate malicious code injection.
+        * Look for successful connections, login attempts, and service restarts.
 
 *   Steps & Example Commands/Queries:
-    1.  Velociraptor Memory Dump (PID '2508'):
-        *   Command:
-        ```bash
-        velociraptor query "select * from artifact.memory_dump(pid=2508)"
-        ```
-        *   Output: A raw memory dump containing the process context.
-
-    2.  Volatility Plugin (Linux):
-        *   Command:
-        ```bash
-        volatility -f <memory_dump> linux.psscan | grep 2508
-        ```
-        *   Output: List of PIDs matching '2508'.
-
-    3.  Volatility Plugin (Linux):
-        *   Command:
-        ```bash
-        volatility -f <memory_dump> linux.pslist | grep 2508
-        ```
-        *   Output: Detailed process info including command line.
-
-    4.  Yara Rule Scan (Memory Dump):
-        *   Command:
-        ```bash
-        yara -s rules.yar <memory_dump>
-        ```
-        *   Output: Matches against known shellcode signatures.
+    1.  **Velociraptor (Session Status):**
+        * Check if the session is active and shows signs of normal operation.
+    2.  **Wazuh API (Recent Alerts):**
+        * Review the most recent alerts for any signs of failure or unexpected behavior.
+    3.  **Splunk (Syslog Analysis):**
+        * Examine syslog entries for successful connections, reboots, or anomalies.
 
 *   Expected Outcome/Interpretation:
-    - ✅ If we recover the full command line, analyze it for suspicious arguments or scripts.
-    - ❌ If the command line is obfuscated or encrypted, escalate to incident response team for deeper analysis.
+    - ✅ If the agent reports healthy sessions, recent alerts, and no failed logins, assume the system is operational despite the rootkit detection.
+    - ❌ If the agent hasn't reported since the alert, or shows frequent connection issues, escalate for manual inspection.
 --------------------------------------------------
 
-Question 5: Have any recent kernel updates been applied to 'ALU-ORDPROC-PROD-01'?
-Detailed Plan:
-**Investigative Plan:*** Objective: Confirm if 'ALU-ORDPROC-PROD-01' (Agent ID: ALU-003) has received recent kernel updates, which could indicate mitigation against potential rootkits.
-
-* Key Data Sources/Tools (Prioritized):
-    1. **Linux Kernel Update Logs (Syslog)**: Check system logs for entries related to kernel update installations.
-    2. **Package Manager Logs (Apt/Yum/Dpkg)**: Search package manager logs for kernel-related updates.
-    3. **Configuration Management Tool Logs (Puppet/SaltStack)**: Look for deployment scripts indicating kernel version changes.
-    4. **Security Information and Event Management (SIEM) Integration**: Use Wazuh or similar SIEMs to query for events related to kernel updates.
-
-* Steps & Example Commands/Queries:
-    1. **Kernel Update Log Analysis (Syslog)**:
-        * Command: `grep "kernel update" /var/log/syslog | tail -n 30`
-        * Expected Output: Recent log entries showing successful kernel updates.
-    2. **Package Manager Logs (Apt)**:
-        * Command: `grep "linux-image-" /var/log/apt/history.log | grep -E "[a-z]{4}-[0-9]+" | tail -n 20`
-        * Expected Output: Latest installed kernel versions.
-    3. **Configuration Management Tool Logs (SaltStack)**:
-        * Command: `grep "salt.state" /var/log/salt/minion | grep "kernel_version" | tail -n 50`
-        * Expected Output: Salt states executed on the machine, including kernel version changes.
-    4. **SIEM Query (Wazuh)**:
-        * Endpoint: `GET /alerts?query=event_type:kernel_update AND hostname:ALU-ORDPROC-PROD-01`
-        * Expected Output: Alerts or events related to kernel updates within the last week.
-
-* Expected Outcome/Interpretation:
-    - ✅ If recent kernel updates are confirmed via multiple methods (syslog, package manager logs, config management), it suggests proactive defense against rootkits.
-    - ❌ If no recent updates are found, consider investigating for signs of compromise or outdated kernels.
---------------------------------------------------
-
-Question 6: Is 'ALU-ORDPROC-PROD-01' running outdated software versions susceptible to rootkits?
+Question 6: What is the operating system version and patch level of 'ALU-ORDPROC-PROD-01'?
 Detailed Plan:
 **Investigative Plan:**
-*   **Objective:** Identify outdated software versions on 'ALU-ORDPROC-PROD-01' (Agent ID: ALU-003) that could be exploited by rootkits.
-
-*   **Key Data Sources/Tools (Prioritized):**
-    1.  **Configuration Management Database (CMDB):** Check installed packages, patches, and version history for critical services (e.g., Apache, MySQL, OpenSSH).
-    2.  **Nessus Scanner:** Run vulnerability scans against 'ALU-ORDPROC-PROD-01' to detect outdated components.
-    3.  **Velociraptor:** Collect system inventory and package lists to verify software versions.
-
-*   **Steps & Example Commands/Queries:**
-    1.  **CMDB Query (via API):**
-        *   Endpoint: `GET /cmdb/systems/{hostname}`
-        *   Query Parameters:
-        ```json
-        {
-          "hostname": "ALU-ORDPROC-PROD-01",
-          "fields": ["installed_packages"]
-        }
-        ```
-        *   Expected Response: JSON object containing list of installed packages and their versions.
-
-    2.  **Nessus Scan (CLI):**
-        *   Command:
-        ```bash
-        nessus_scan -h <agent-ip> -p 8834 -d /tmp/nessus_scan_output.json
-        ```
-        *   Output File: `/tmp/nessus_scan_output.json`
-        *   Expected Results: Vulnerability report showing outdated software versions.
-
-    3.  **Velociraptor Query (via API):**
-        *   Endpoint: `POST /api/v2/query`
-        *   Request Body:
-        ```json
-        {
-          "query": "select * from artifact.linux.package_inventory(host_name=\"ALU-ORDPROC-PROD-01\")"
-        }
-        ```
-        *   Expected Response: List of installed packages and their versions.
-
-*   **Expected Outcome/Interpretation:**
-    - ✅ If Nessus/Velociraptor reports outdated software versions (e.g., OpenSSL 1.0.x, PHP 5.6), prioritize patching immediately.
-    - ❌ If all software is up-to-date, focus on investigating the rootkit detection itself.
---------------------------------------------------
-
-Question 7: Are there any unusual files or directories created under '/root/' or '/etc/' recently?
-Detailed Plan:
-**Investigative Plan:
-*   Objective: Identify any suspicious files/directories created under '/root/' or '/etc/' within the last few days.
+*   Objective: Identify the exact OS version and patch level running on the host 'ALU-ORDPROC-PROD-01'. This will help determine if the observed behavior aligns with expected configurations or if there might be a mismatch due to compromised software updates.
 
 *   Key Data Sources/Tools (Prioritized):
-    1.  **Linux Audit Logs (Syslog or Wazuh API):** Look for recent additions to these paths via auditd events or Wazuh logs.
-    2.  **Velociraptor (Host: ALU-ORDPROC-PROD-01):** Use artifact queries to check for new files/dirs in critical locations.
-    3.  **SIEM (Splunk/Wazuh):** Query for log entries showing changes to these paths by users or processes.
+    1.  **OSINT Tools (e.g., Shodan, Censys)**: Use passive reconnaissance to gather OS fingerprinting data.
+    2.  **Active Scanning (e.g., Nmap, Nessus)**: Perform network scans to detect open ports and services, which can reveal OS details.
+    3.  **Local Agent Logs (e.g., Velociraptor, Wazuh)**: Analyze local logs for system information, including OS versions.
+    4.  **Configuration Management Databases (CMDB)**: Cross-reference with internal CMDB entries to verify the expected OS version.
 
 *   Steps & Example Commands/Queries:
-    1.  **Audit Log Search (Syslog or Wazuh API):**
-        * Syslog Command:
+    1.  **Shodan/Censys Passive Fingerprinting**:
+        *   Query Shodan using the target IP (`88.88.88.88`) to retrieve OS fingerprints.
+        *   Example command: `shodan host 88.88.88.88`.
+        *   Look for keywords like `Linux`, `Ubuntu`, `CentOS`, `Windows`, etc.
+    2.  **Nmap Active Discovery**:
+        *   Run a basic scan to identify open ports and services:
         ```bash
-        grep -iE '(^AUDIT|^Added)' /var/log/syslog | grep -E '/root/|/etc/' | tail -n 30
+        nmap -sS -p- -O 88.88.88.88
         ```
-        * Wazuh API Query:
-        ```http
-        GET /agents/ALU-003/logs/summary?q=data.path:/root|data.path:/etc
-        ```
-
-    2.  **Velociraptor (Host: ALU-ORDPROC-PROD-01):**
-        * Query:
+        *   Review the results for OS detection (`OS:`).
+    3.  **Velociraptor Local Log Analysis**:
+        *   Query Velociraptor to collect `/etc/os-release` and `/etc/redhat-release`:
         ```sql
-        SELECT * FROM Artifact.Linux.NewFilesInPath(path='/root/', hostname='ALU-ORDPROC-PROD-01');
+        SELECT * FROM Artifact.Linux.OSRelease(Hostname='ALU-ORDPROC-PROD-01');
         ```
-        * Repeat for `/etc/`.
+        *   Parse the output for OS name, version, and patch level.
+    4.  **CMDB Verification**:
+        *   Query the CMDB using the hostname (`ALU-ORDPROC-PROD-01`) to retrieve the configured OS version.
+        *   Compare the CMDB entry with the detected version from previous steps.
 
-    3.  **SIEM Query (Splunk/Wazuh):**
-        * Splunk Query:
-        ```splunk
-        index=wazuh sourcetype="linux_audit" path IN ("/root/", "/etc/") earliest=-24h latest=@d
+*   Expected Outcome/Interpretation:
+    - ✅ If the OS version matches the expected configuration in the CMDB, proceed with further analysis.
+    - ❌ If there’s a mismatch between active scanning and CMDB records, investigate further for signs of tampering or compromise.
+--------------------------------------------------
+
+Question 7: Is the group 'aluskort-prod' associated with any sensitive or privileged functions?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Identify if the group 'aluskort-prod' is tied to critical operations, high-value assets, or elevated privileges within the organization.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Active Directory (AD):** Check group membership, permissions, and administrative rights.
+    2.  **Privileged Access Management (PAM) Tool:** Confirm if 'aluskort-prod' is linked to PAM accounts or special access policies.
+    3.  **Asset Inventory Database:** Cross-reference group members against critical servers, databases, or infrastructure components.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **AD Group Membership Lookup:**
+        * AD PowerShell Module:
+        ```powershell
+        Get-ADGroupMember -Identity "aluskort-prod" | Select Name, DistinguishedName
         ```
-        * Wazuh Query:
+        * This will list all users/groups under 'aluskort-prod'.
+
+    2.  **PAM Tool (e.g., CyberArk)**:
+        * Query for 'aluskort-prod':
+        ```bash
+        curl -u admin:password -X POST \
+         \
+        -d '{
+            "filter": "(group_name:\"aluskort-prod\")",
+            "limit": 50
+        }'
+        ```
+        * Look for sessions, credentials, or secrets associated with the group.
+
+    3.  **Asset Inventory (CMDB):**
+        * SQL Query:
+        ```sql
+        SELECT asset_id, asset_type, owner, description FROM cmdb_assets WHERE group_name LIKE '%aluskort-prod%';
+        ```
+        * Check if the group manages production servers, databases, or critical applications.
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If 'aluskort-prod' is linked to high-value assets, privileged accounts, or sensitive workloads, escalate for review.
+    - ❌ If the group appears generic or non-critical, continue monitoring but consider adjusting detection sensitivity.
+--------------------------------------------------
+
+Question 8: Are there any known vulnerabilities in the OS or applications running on 'ALU-ORDPROC-PROD-01' that could facilitate rootkit installation?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Identify any unpatched vulnerabilities in operating system (OS), installed software, or configurations on 'ALU-ORDPROC-PROD-01' that could allow attackers to deploy a rootkit.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Vulnerability Scanner (Nessus/Tenable):** Run a full scan against the target host to detect missing patches, misconfigurations, and outdated software versions.
+    2.  **CVE Database (NVD/API):** Cross-reference detected software versions against CVEs to identify known exploits.
+    3.  **Vendor Security Advisories (Microsoft, Linux Kernel, Apache, etc.):** Check official vendor bulletins for recent critical updates.
+    4.  **Internal Vulnerability Management Tool (e.g., Qualys):** Search for any prior scans or findings related to 'ALU-ORDPROC-PROD-01'.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **Nessus Scan (Full Audit):**
+        *   Command: `nessus_scan -t ALU-ORDPROC-PROD-01 -f csv -o vuln_results.csv`
+        *   Look for high-severity findings such as:
+            -   Missing OS patches (e.g., Linux kernel, Windows).
+            -   Outdated software versions (e.g., Apache, MySQL, Java).
+            -   Misconfigured services (e.g., open ports, weak permissions).
+    2.  **NVD/CVE Lookup (API):**
+        *   Python Script:
+        ```python
+        import requests
+        
+        url = "
+        response = requests.get(url)
+        json_data = response.json()
+        
+        # Filter by CVSS score > 7.0
+        filtered_vulns = [vuln for vuln in json_data if vuln['cvssScore'] >= 7.0]
+        
+        print("High Severity Vulnerabilities:")
+        for vuln in filtered_vulns:
+            print(f"{vuln['cveId']} - {vuln['description']}")
+        ```
+        *   Output: List of critical CVEs affecting the host.
+
+    3.  **Vendor Bulletin Check (Linux Kernel, Microsoft, Apache):**
+        *   Web Scraper:
+        ```javascript
+        const axios = require('axios');
+        
+        async function getVendorBulletins() {
+            const linuxUrl = '
+            const windowsUrl = '
+            const apacheUrl = '
+            
+            let linuxData = await axios.get(linuxUrl);
+            let windowsData = await axios.get(windowsUrl);
+            let apacheData = await axios.get(apacheUrl);
+            
+            console.log("Linux Bulletins:");
+            console.log(linuxData.data);
+            
+            console.log("\nWindows Bulletins:");
+            console.log(windowsData.data);
+            
+            console.log("\nApache Bulletins:");
+            console.log(apacheData.data);
+        }
+        
+        getVendorBulletins();
+        ```
+        *   Output: Latest advisories for OS/kernel and web server components.
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If Nessus finds unpatched vulnerabilities (e.g., RCE in Apache, privilege escalation in Linux kernel), prioritize patching immediately.
+    - ❌ If only low-risk issues are found, focus on network monitoring and behavioral analysis instead of immediate remediation.
+--------------------------------------------------
+
+Question 9: Has 'ALU-ORDPROC-PROD-01' communicated with any external IP addresses recently?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Identify recent outbound connections from 'ALU-ORDPROC-PROD-01' (Agent ID: ALU-003) to external IPs.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Wazuh API (Endpoint: /agents/ALU-003/logs/summary)**: Search for network events (`data.event_type:network`) within the last hour.
+    2.  **Zeek Logs (Endpoint: /logs/zeek)**: Look for TCP/IP flows involving the host.
+    3.  **Firewall Logs (Endpoint: /firewalls/firewalld)**: Check for allowed/denied traffic related to 'ALU-ORDPROC-PROD-01'.
+    4.  **Nmap Scan Results (Endpoint: /scans/nmap)**: Review scans targeting 'ALU-ORDPROC-PROD-01'.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **Wazuh API (Network Events):**
+        *   Query:
         ```http
-        GET /search/query?q=path%3A%2Froot%7Cpath%3A%2Fetc&timeframe=-24h@h
+        GET /agents/ALU-003/logs/summary?q=data.event_type:network AND data.host:ALU-ORDPROC-PROD-01
         ```
+        *   Expected Output: List of network events (TCP/UDP), destination IPs, timestamps.
+    2.  **Zeek Logs (Recent Flows):**
+        *   Query:
+        ```http
+        GET /logs/zeek?q=dst_host:ALU-ORDPROC-PROD-01 AND ts:[2024-05-21T09:00Z TO 2024-05-21T11:00Z]
+        ```
+        *   Expected Output: Zeek flow logs showing source/destination IPs, ports, protocols.
+    3.  **Firewall Logs (Allowed/Denied Traffic):**
+        *   Query:
+        ```http
+        GET /firewalls/firewalld?q=host:ALU-ORDPROC-PROD-01 AND ts:[2024-05-21T09:00Z TO 2024-05-21T11:00Z]
+        ```
+        *   Expected Output: Firewall rules applied to 'ALU-ORDPROC-PROD-01' during the timeframe.
+    4.  **Nmap Scan Results (Scans Targeting Host):**
+        *   Query:
+        ```http
+        GET /scans/nmap?q=target:ALU-ORDPROC-PROD-01
+        ```
+        *   Expected Output: Nmap scan results indicating open ports, services running on 'ALU-ORDPROC-PROD-01'.
 
-*   Expected Outcome/Interpretation:
-    - ✅ If new files/dirs are found, especially those not matching system packages or expected scripts, flag them for manual review.
-    - ❌ If nothing suspicious is found, continue monitoring for persistence mechanisms (cron jobs, startup scripts).
+*   **Expected Outcome/Interpretation:**
+    - ✅ If Wazuh API returns multiple network events to external IPs, review them for suspicious destinations (e.g., C&C servers).
+    - ❌ If Zeek shows only local traffic or no external flows, investigate further using firewall logs and Nmap scans.
 --------------------------------------------------
 
-Question 8: Does 'ALU-ORDPROC-PROD-01' exhibit any anomalous network traffic patterns?
+Question 10: Can you retrieve the full rootcheck decoder output for further analysis?
 Detailed Plan:
-**Investigative Plan:***   Objective: Identify unusual outbound connections, suspicious ports, or anomalies in network traffic originating from 'ALU-ORDPROC-PROD-01'.
+**Investigative Plan:**
+*   **Objective:** Extract the complete rootcheck decoder output from Velociraptor to analyze for signs of kernel-level rootkits.
 
-*   Key Data Sources/Tools (Prioritized):
-    1.  **Zeek Logs (Bro IDS):** Analyze Zeek logs (`conn.log`) for unexpected destinations, high volume, or rare protocols.
-    2.  **NetFlow Analysis:** Use NetFlow records to detect spikes in bandwidth usage or unusual remote hosts.
-    3.  **Wazuh API:** Query Wazuh logs for alerts related to 'ALU-ORDPROC-PROD-01' involving network events.
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Velociraptor:** Query the endpoint (ALU-ORDPROC-PROD-01) to retrieve the full rootcheck decoder output.
 
-*   Steps & Example Commands/Queries:
-    1.  **Zeek Log Query (via API):**
-        *   Endpoint: `GET /logs/conn.json`
-        *   Filter by Agent ID:
-        ```json
-        {"agent_id": "ALU-003"}
+*   **Steps & Example Commands/Queries:**
+    1.  **Velociraptor Command (Endpoint: ALU-ORDPROC-PROD-01):**
+        *   Execute the following command to collect the rootcheck decoder output:
+        ```bash
+        #!/bin/bash
+        velociraptorctl query \
+            --endpoint=ALU-ORDPROC-PROD-01 \
+            --artifact=rootcheck_decoder \
+            --output=/tmp/rootcheck_output.json
         ```
-        *   Look for:
-            *   Unusual destination IPs/domains.
-            *   High-frequency connections to single IPs.
-            *   Rare protocols (e.g., ICMP, DNS over TCP).
-    2.  **NetFlow Analysis (via API):**
-        *   Endpoint: `GET /flows.json`
-        *   Filter by Agent IP:
-        ```json
-        {"agent_ip": "88.88.88.88"}
-        ```
-        *   Aggregate by:
-            *   Destination IP.
-            *   Protocol.
-            *   Bytes transferred.
-    3.  **Wazuh Alert Query (via API):**
-        *   Endpoint: `GET /alerts.json`
-        *   Filter by Agent Name:
-        ```json
-        {"agent_name": "ALU-ORDPROC-PROD-01"}
-        ```
-        *   Look for:
-            *   Alerts tagged as `network_anomaly`.
-            *   Alerts mentioning `unusual_port` or `high_volume_traffic`.
+        *   This will save the decoder output to `/tmp/rootcheck_output.json`.
 
-*   Expected Outcome/Interpretation:
-    - ✅ If Zeek logs reveal frequent connections to unknown domains/IPs or rare protocols, flag for deeper inspection.
-    - ❌ If NetFlow shows normal patterns, focus on Wazuh alerts for additional context.
---------------------------------------------------
-
-Question 9: Are there any additional alerts or logs indicating further compromise attempts on 'ALU-ORDPROC-PROD-01'?
-Detailed Plan:
-**Investigative Plan:*** Objective: Identify follow-up actions based on the rootkit detection (`Process '2508' hidden from /proc.`).
-
-* Key Data Sources/Tools (Prioritized):
-    1. Wazuh API: Search all logs for related events (e.g., suspicious processes, failed logins, network connections).
-    2. Velociraptor: Collect recent process execution logs and system artifacts from 'ALU-ORDPROC-PROD-01'.
-    3. Syslog Server: Review centralized logs for any unusual activities around the time of detection.
-
-* Steps & Example Commands/Queries:
-    1. Wazuh API (Endpoint: `GET /agents/ALU-003/logs/summary?q=agent.hostname:ALU-ORDPROC-PROD-01&rule.description:rootkit`):
-        * Look for alerts with similar descriptions or MITRE IDs (e.g., T1014, T1055, T1036).
-        * Check for repeated occurrences of the same rootkit-related event.
-    2. Velociraptor (Host: `ALU-ORDPROC-PROD-01`):
-        * Run queries to collect:
-            * Recent process executions (`SELECT * FROM artifact.processes()`)
-            * Network connections (`SELECT * FROM artifact.network_connections()`).
-        * Focus on anomalies such as unexpected outbound traffic or unauthorized processes.
-    3. Syslog Server (Query: `grep -i 'ALU-ORDPROC-PROD-01' /var/log/syslog | grep -E 'error|warning|critical'`):
-        * Search for error messages or warnings related to the affected host.
-        * Pay attention to timestamps near the rootkit detection.
-
-* Expected Outcome/Interpretation:
-    - ✅ If multiple alerts or suspicious behaviors are detected, escalate to incident response.
-    - ❌ If only one instance of the rootkit is found, monitor closely for persistence mechanisms.
+*   **Expected Outcome/Interpretation:**
+    - ✅ If the decoder output contains suspicious findings (hidden processes, modified system files), it indicates possible rootkit activity.
+    - ❌ If the output shows no anomalies, continue monitoring for persistence mechanisms or lateral movement attempts.
 --------------------------------------------------
