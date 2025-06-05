@@ -1,0 +1,35 @@
+--- Summary of All Extracted IOCs (2 alert(s) processed) ---
+
+Alert 1 ID: 1716285915.9646311
+  Validated IOCs:
+    Timestamp: 2024-05-21T10:05:15.123+0000
+    Alert ID: 1716285915.9646311
+    Rule ID: 521
+    Rule Description: Possible kernel level rootkit
+    MITRE Technique ID: T1014 – Rootkit
+    Agent ID: ALU-003
+    Agent Hostname: ALU-ORDPROC-PROD-01
+    Agent IP: 10.60.5.25
+    Group: aluskort-prod
+    Title: Process '2508' hidden from /proc.
+    Decoder: rootcheck
+
+Alert 2 ID: 1716286230.10158622
+  Validated IOCs:
+    Timestamp: 2024-05-21T10:10:30.456+0000
+    Alert ID: 1716286230.10158622
+    Rule ID: 31533
+    Rule Description: High amount of POST requests in a small period of time (likely bot).
+    MITRE Technique ID: T1498 – Network Denial of Service
+    Agent ID: ALU-001
+    Agent Name: ALU-WEB-PROD-01
+    Agent IP: 10.50.1.10
+    Labels: group: aluskort-prod
+    Source IP: 198.51.100.25
+    HTTP Method: POST
+    URL Path: /cart/add
+    HTTP Status Code: 200
+    Log Location: C:\\inetpub\\logs\\LogFiles\\W3SVC1\\u_ex240521.log
+    Decoder: web-accesslog
+
+--- End of Summary ---
