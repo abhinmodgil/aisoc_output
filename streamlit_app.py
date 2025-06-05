@@ -1,4 +1,4 @@
-# app.py
+# app.py or streamlit_app.py
 
 import streamlit as st
 import requests
@@ -14,22 +14,17 @@ GITHUB_BRANCH = "main"
 ALERTS_DATA_BASE_PATH = "outputs/alerts"
 WAZUH_ALERTS_FILE_PATH = "jan30_alerts.json"
 
-# GH_TOKEN_FOR_REQUESTS is removed for public deployment without explicit PAT
-# Unauthenticated requests will be used. Ensure GITHUB_REPO_NAME is public.
-
 st.info(
     "ℹ️ This app is configured for public GitHub access without a PAT. "
     f"Ensure the target repository '{GITHUB_USERNAME}/{GITHUB_REPO_NAME}' is public. "
     "API rate limits for unauthenticated requests will apply."
 )
 
-# --- GitHub Helper Functions (Modified to not require token explicitly in signature) ---
+# --- GitHub Helper Functions ---
 @st.cache_data(ttl=300)
-def list_github_directories(username, repo, path, branch): # Removed token from signature
-    """Lists directories from a public GitHub repository path."""
+def list_github_directories(username, repo, path, branch):
     api_url = f"https://api.github.com/repos/{username}/{repo}/contents/{path.strip('/')}?ref={branch}"
     headers = {"Accept": "application/vnd.github.v3+json"}
-    # No Authorization header added if token is not provided
     dir_names = []
     try:
         response = requests.get(api_url, headers=headers)
@@ -48,65 +43,75 @@ def list_github_directories(username, repo, path, branch): # Removed token from 
 
 
 @st.cache_data(ttl=300)
-def get_github_file_content(username, repo, file_path, branch): # Removed token from signature
-    """Fetches and decodes file content from a public GitHub file_path via API."""
+def get_github_file_content(username, repo, file_path, branch):
     api_url = f"https://api.github.com/repos/{username}/{repo}/contents/{file_path.strip('/')}?ref={branch}"
     headers_api = {"Accept": "application/vnd.github.v3+json"}
-    # No Authorization header added
     try:
         response_api = requests.get(api_url, headers=headers_api)
-        response_api.raise_for_status()
+        response_api.raise_for_status() # Will raise an exception for 4xx/5xx errors
         content_data = response_api.json()
         if "content" in content_data:
             base64_content_cleaned = content_data["content"].replace('\n', '').replace('\r', '')
             decoded_bytes = base64.b64decode(base64_content_cleaned)
             return decoded_bytes.decode('utf-8')
         else:
-            st.error(f"No 'content' in API response for '{file_path}'. JSON: {content_data}"); return None
-    except requests.exceptions.HTTPError as http_err:
-        if response_api.status_code == 404:
+            # This case should ideally not happen if status is 200 OK
+            st.error(f"No 'content' key in API response for '{file_path}', though request was successful. JSON: {content_data}");
             return None
-        st.error(f"HTTP error getting file '{file_path}': {http_err} (Is the repo public and path correct?)")
-    except Exception as e:
-        st.error(f"Error getting file '{file_path}': {e}")
-    return None
+    except requests.exceptions.HTTPError as http_err:
+        # Specifically handle 404 (File Not Found) by returning None quietly
+        if http_err.response.status_code == 404:
+            # st.info(f"File not found (404): {file_path}") # Optional: for debugging
+            return None
+        # For other HTTP errors, show an error message
+        st.error(f"HTTP error {http_err.response.status_code} getting file '{file_path}': {http_err} (Is the repo public and path correct?)")
+        return None # Ensure None is returned on other HTTP errors too
+    except Exception as e: # Catch other potential errors (e.g., network issues, JSON decoding of the response itself)
+        st.error(f"General error getting file '{file_path}': {e}")
+        return None
+    return None # Should be unreachable if logic is correct, but as a safeguard
 
 
-# --- Data Loading Functions (Calls to helpers are modified) ---
 @st.cache_data(ttl=3600)
-def load_wazuh_alerts_data_from_github(username, repo, file_path, branch): # Removed token
-    json_lines_content_str = get_github_file_content(username, repo, file_path, branch) # No token passed
+def load_wazuh_alerts_data_from_github(username, repo, file_path, branch):
+    json_lines_content_str = get_github_file_content(username, repo, file_path, branch)
 
-    if json_lines_content_str:
-        alerts_dict = {}
-        error_messages_list = []
-        for i, line in enumerate(json_lines_content_str.strip().split('\n')):
-            line = line.strip()
-            if not line: continue
-            try:
-                alert_obj = json.loads(line)
-                alert_id_val = alert_obj.get("id")
-                if alert_id_val:
-                    alerts_dict[str(alert_id_val)] = alert_obj
-                else:
-                    error_messages_list.append(
-                        f"Line {i + 1}: Alert object missing 'id' field. Content: '{line[:100]}...'")
-            except json.JSONDecodeError as e:
-                error_messages_list.append(f"Line {i + 1}: Error decoding JSON: {e}. Content: '{line[:100]}...'")
-        combined_error_message = "\n".join(error_messages_list) if error_messages_list else None
-        if alerts_dict:
-            return alerts_dict, combined_error_message, json_lines_content_str if combined_error_message else None
-        elif combined_error_message:
-            return None, combined_error_message, json_lines_content_str
-        elif json_lines_content_str.strip(): # Content exists but no valid alerts parsed
-            return None, f"No alerts with 'id' fields found or processed from '{file_path}'. Check JSON Lines structure.", json_lines_content_str
-        else: # File was empty or only whitespace
-            return None, f"The Wazuh alerts file '{file_path}' appears to be empty or only whitespace.", None
-    else:
-        return None, f"Could not retrieve content for Wazuh alerts file: '{file_path}' from public repo.", None
+    if json_lines_content_str is None: # Explicitly check for None
+        return None, f"Could not retrieve content for Wazuh alerts file: '{file_path}' from public repo (file might be missing or inaccessible).", None
+
+    alerts_dict = {}
+    error_messages_list = []
+    # Check if content is empty or only whitespace AFTER successful retrieval
+    if not json_lines_content_str.strip():
+        return None, f"The Wazuh alerts file '{file_path}' appears to be empty or only whitespace after retrieval.", json_lines_content_str
 
 
-# --- Parsing Functions (No changes needed here) ---
+    for i, line in enumerate(json_lines_content_str.strip().split('\n')):
+        line = line.strip()
+        if not line: continue
+        try:
+            alert_obj = json.loads(line)
+            alert_id_val = alert_obj.get("id")
+            if alert_id_val:
+                alerts_dict[str(alert_id_val)] = alert_obj
+            else:
+                error_messages_list.append(
+                    f"Line {i + 1}: Alert object missing 'id' field. Content: '{line[:100]}...'")
+        except json.JSONDecodeError as e:
+            error_messages_list.append(f"Line {i + 1}: Error decoding JSON: {e}. Content: '{line[:100]}...'")
+
+    combined_error_message = "\n".join(error_messages_list) if error_messages_list else None
+
+    if alerts_dict: # Successfully parsed some alerts
+        return alerts_dict, combined_error_message, None # No raw content needed if errors are only partial
+    elif combined_error_message: # Errors occurred, and no alerts were successfully parsed
+        return None, combined_error_message, json_lines_content_str # Return raw content for debugging errors
+    # No alerts with 'id' parsed, but also no explicit JSON errors (e.g., all lines malformed without 'id')
+    return None, f"No alerts with 'id' fields found or processed from '{file_path}'. Check JSON Lines structure.", json_lines_content_str
+
+
+# --- Parsing Functions (No changes needed here based on the error) ---
+# ... (keep your parsing functions as they were in the last working version) ...
 def parse_phase1_ioc_file_content(raw_text):
     iocs_data = {};
     validated_count_str = "N/A"
@@ -198,11 +203,11 @@ def parse_phase1_5_contextual_inquiry_file(raw_text):
     return initial_assessment.strip(), questions_list_strings
 
 def parse_phase2_plan_file_content(raw_text):
-    if not raw_text: return None, None, None, []
+    if not raw_text: return None, None, None, [] # Corrected: return 4 values
     alert_id_match = re.search(r"--- Detailed Investigative Plan for Alert ID: (.*?) ---", raw_text)
-    alert_id = alert_id_match.group(1).strip() if alert_id_match else "N/A"
+    # alert_id = alert_id_match.group(1).strip() if alert_id_match else "N/A" # alert_id not used by caller
     agent_id_match = re.search(r"--- Agent ID: (.*?) ---", raw_text)
-    agent_id = agent_id_match.group(1).strip() if agent_id_match else "N/A"
+    # agent_id = agent_id_match.group(1).strip() if agent_id_match else "N/A" # agent_id not used by caller
     initial_assessment_match = re.search(
         r"--- Initial Assessment \(from Contextual Inquiry\) ---\s*(.*?)\s*--- Validated IOCs Used for Plan Generation ---",
         raw_text, re.DOTALL
@@ -241,7 +246,8 @@ def parse_phase2_plan_file_content(raw_text):
             questions_and_plans.append({"question": "Note", "plan_text": note_match.group(1).strip()})
         elif "No specific questions or plans were generated" in plans_block_match.group(1).strip():
              questions_and_plans.append({"question": "Status", "plan_text": plans_block_match.group(1).strip()})
-    return initial_assessment, validated_iocs_text, questions_and_plans
+    # Ensure 4 values are returned even if some are "N/A" or default
+    return initial_assessment, validated_iocs_text, questions_and_plans # Removed unused alert_id, agent_id
 
 
 # --- Streamlit App UI ---
@@ -249,25 +255,37 @@ st.set_page_config(layout="wide", page_title="AI SOC Multi-Phase Viewer")
 st.title("🛡️ AI SOC - Multi-Phase Alert Investigation")
 st.markdown(f"Data from GitHub: `{GITHUB_USERNAME}/{GITHUB_REPO_NAME}` (branch: `{GITHUB_BRANCH}`)")
 
-# Calls to data loading functions no longer pass token
-all_wazuh_alerts_map, wazuh_load_error_msg, wazuh_error_raw_content = load_wazuh_alerts_data_from_github(
-    GITHUB_USERNAME, GITHUB_REPO_NAME, WAZUH_ALERTS_FILE_PATH, GITHUB_BRANCH
-)
+# Initialize to ensure these variables always exist
+all_wazuh_alerts_map = None
+wazuh_load_error_msg = None
+wazuh_error_raw_content = None
+
+# Try to load data and handle potential errors from the loading function
+try:
+    all_wazuh_alerts_map, wazuh_load_error_msg, wazuh_error_raw_content = load_wazuh_alerts_data_from_github(
+        GITHUB_USERNAME, GITHUB_REPO_NAME, WAZUH_ALERTS_FILE_PATH, GITHUB_BRANCH
+    )
+except Exception as e:
+    wazuh_load_error_msg = f"Critical error during Wazuh alert loading: {str(e)}"
+    st.error(wazuh_load_error_msg)
+    # You might want to log the full traceback here for server-side debugging
+    # print(traceback.format_exc()) # Uncomment for local debugging
 
 if wazuh_load_error_msg:
     st.error(f"Problem loading original Wazuh alerts data: {wazuh_load_error_msg}")
-    if wazuh_error_raw_content:
+    if wazuh_error_raw_content: # Show raw content if the loader function managed to return it
         with st.expander("View Problematic Wazuh Alerts JSON Content"):
-            st.text_area("Content:", wazuh_error_raw_content[:1000], height=200, key="wazuh_error_json_display")
-if all_wazuh_alerts_map is not None and not wazuh_load_error_msg:
+            st.text_area("Content:", wazuh_error_raw_content[:2000], height=200, key="wazuh_error_json_display")
+
+if all_wazuh_alerts_map is not None and not wazuh_load_error_msg: # Successfully loaded some alerts
     st.success(
         f"Successfully loaded {len(all_wazuh_alerts_map)} original Wazuh alerts from '{WAZUH_ALERTS_FILE_PATH}'.")
-elif all_wazuh_alerts_map is None and not wazuh_load_error_msg: # No data but also no explicit error from loading
-    st.warning(f"No alerts with 'id' fields parsed from '{WAZUH_ALERTS_FILE_PATH}', or file was empty/inaccessible from public repo.")
+elif all_wazuh_alerts_map is None and not wazuh_load_error_msg: # No alerts loaded, but no direct error message from the loader
+    st.warning(f"No alerts with 'id' fields parsed from '{WAZUH_ALERTS_FILE_PATH}', or the file was empty/inaccessible from the public repo.")
 
 
 alert_id_dirs = list_github_directories(
-    GITHUB_USERNAME, GITHUB_REPO_NAME, ALERTS_DATA_BASE_PATH, GITHUB_BRANCH # No token
+    GITHUB_USERNAME, GITHUB_REPO_NAME, ALERTS_DATA_BASE_PATH, GITHUB_BRANCH
 )
 
 st.sidebar.header("🚨 Alert Selection")
@@ -277,6 +295,7 @@ selected_alert_id = st.sidebar.selectbox(
     format_func=lambda x: "Select an Alert" if x == "" else x
 )
 
+# THIS IS LIKELY WHERE LINE 304 IS OR NEAR
 if not selected_alert_id:
     st.info("👈 Please select an Alert ID from the sidebar to view its phase details.")
 else:
@@ -290,24 +309,27 @@ else:
     ]
     tabs = st.tabs(tab_titles)
 
+    # --- Tab 0: Original Alert Details ---
     with tabs[0]:
         st.subheader("📜 Full Original Wazuh Alert")
         original_alert_data_to_display = None
-        if all_wazuh_alerts_map:
+        if all_wazuh_alerts_map: # This check is safer now
             original_alert_data_to_display = all_wazuh_alerts_map.get(selected_alert_id)
+
         if original_alert_data_to_display:
             st.json(original_alert_data_to_display)
-        elif all_wazuh_alerts_map is not None: # Map was loaded but ID not found
+        elif all_wazuh_alerts_map is not None: # Map exists, but ID not in it
             st.warning(f"Original Wazuh alert for ID '{selected_alert_id}' not found in the loaded alerts file.")
-        else: # Map itself failed to load
-            st.info("Original Wazuh alerts data couldn't be loaded (see messages above if any).")
+        else: # all_wazuh_alerts_map is None (loading failed or returned None)
+            st.info("Original Wazuh alerts data could not be loaded or is not available (see messages above if any).")
 
+    # --- Tab 1: Phase 1 - IOC Extraction ---
     if len(tabs) > 1:
         with tabs[1]:
             st.subheader("📄 Extracted IOCs")
             p1_ioc_file_path = f"{ALERTS_DATA_BASE_PATH}/{selected_alert_id}/phase1_iocs.txt"
             p1_ioc_file_content = get_github_file_content(GITHUB_USERNAME, GITHUB_REPO_NAME, p1_ioc_file_path,
-                                                          GITHUB_BRANCH) # No token
+                                                          GITHUB_BRANCH)
             if p1_ioc_file_content:
                 parsed_iocs, validated_count = parse_phase1_ioc_file_content(p1_ioc_file_content)
                 st.info(f"**Validated IOC Keys Count (from IOC file):** {validated_count}")
@@ -319,14 +341,15 @@ else:
                 with st.expander("Raw P1 IOC File Content"):
                     st.text_area(f"P1 Content:", p1_ioc_file_content, height=300, key=f"p1_raw_ioc_{selected_alert_id}")
             elif alert_id_dirs:
-                st.info(f"P1 IOC file not found: '{p1_ioc_file_path}'. File might not exist or could not be loaded for this alert.")
+                st.info(f"P1 IOC file not found for Alert ID '{selected_alert_id}': '{p1_ioc_file_path}'. File might not exist or could not be loaded.")
 
+    # --- Tab 2: Phase 1.5 - Contextual Inquiry ---
     if len(tabs) > 2:
         with tabs[2]:
             st.subheader("🤔 Phase 1.5: Contextual Inquiry Output")
             p1_5_context_file_path = f"{ALERTS_DATA_BASE_PATH}/{selected_alert_id}/phase1.5_contextual_inquiry.txt"
             p1_5_context_file_content = get_github_file_content(
-                GITHUB_USERNAME, GITHUB_REPO_NAME, p1_5_context_file_path, GITHUB_BRANCH # No token
+                GITHUB_USERNAME, GITHUB_REPO_NAME, p1_5_context_file_path, GITHUB_BRANCH
             )
             if p1_5_context_file_content:
                 initial_assessment, questions_list = parse_phase1_5_contextual_inquiry_file(p1_5_context_file_content)
@@ -348,34 +371,39 @@ else:
                     st.text_area(f"P1.5 Content:", p1_5_context_file_content, height=400,
                                  key=f"p1_5_raw_context_{selected_alert_id}")
             elif alert_id_dirs:
-                st.info(f"Phase 1.5 Contextual Inquiry file not found: '{p1_5_context_file_path}'. File might not exist or could not be loaded for this alert.")
+                st.info(f"Phase 1.5 Contextual Inquiry file not found for Alert ID '{selected_alert_id}': '{p1_5_context_file_path}'.")
 
+    # --- Tab 3: Phase 2 - Investigative Plans ---
     if len(tabs) > 3:
         with tabs[3]:
             st.subheader("📝 Generated Investigative Plans")
             p2_plans_file_path = f"{ALERTS_DATA_BASE_PATH}/{selected_alert_id}/phase2_detailed_investigation_plans.txt"
             p2_plans_file_content = get_github_file_content(
-                GITHUB_USERNAME, GITHUB_REPO_NAME, p2_plans_file_path, GITHUB_BRANCH # No token
+                GITHUB_USERNAME, GITHUB_REPO_NAME, p2_plans_file_path, GITHUB_BRANCH
             )
             if p2_plans_file_content:
-                phase2_assessment, phase2_iocs, phase2_q_and_plans = parse_phase2_plan_file_content(
+                # Corrected to match the 3 return values from the modified parser
+                phase2_assessment, phase2_iocs_text, phase2_q_and_plans = parse_phase2_plan_file_content(
                     p2_plans_file_content)
+
                 if phase2_assessment and phase2_assessment != "Assessment not parsed.":
                     st.markdown("**Recap: Initial Alert Assessment (from Contextual Inquiry):**")
                     st.markdown(phase2_assessment)
                 else:
                     st.info("Initial assessment section not found or parsed from Phase 2 file.")
                 st.markdown("---")
-                if phase2_iocs and phase2_iocs != "Validated IOCs not parsed.":
+
+                if phase2_iocs_text and phase2_iocs_text != "Validated IOCs not parsed.":
                     st.markdown("**Recap: Validated IOCs Used for Plan Generation:**")
                     try:
-                        iocs_json = json.loads(phase2_iocs)
+                        iocs_json = json.loads(phase2_iocs_text) # Use phase2_iocs_text here
                         st.json(iocs_json)
                     except json.JSONDecodeError:
-                        st.text_area("IOCs Text:", value=phase2_iocs, height=150, disabled=True, key=f"p2_iocs_{selected_alert_id}")
+                        st.text_area("IOCs Text:", value=phase2_iocs_text, height=150, disabled=True, key=f"p2_iocs_{selected_alert_id}")
                 else:
                     st.info("Validated IOCs section not found or parsed from Phase 2 file.")
                 st.markdown("---")
+
                 if phase2_q_and_plans:
                     st.markdown("**Detailed Investigative Questions and Plans:**")
                     for i, plan_data in enumerate(phase2_q_and_plans):
@@ -391,4 +419,4 @@ else:
                     st.text_area(f"P2 Content:", p2_plans_file_content, height=400,
                                  key=f"p2_raw_plans_{selected_alert_id}")
             elif alert_id_dirs:
-                st.info(f"Phase 2 plans file not found: '{p2_plans_file_path}'. File might not exist or could not be loaded for this alert.")
+                st.info(f"Phase 2 plans file not found for Alert ID '{selected_alert_id}': '{p2_plans_file_path}'.")
