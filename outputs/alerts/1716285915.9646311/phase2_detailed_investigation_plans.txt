@@ -1,0 +1,347 @@
+--- Detailed Investigative Plan for Alert ID: 1716285915.9646311 ---
+--- Agent ID: ALU-003 ---
+
+--- Initial Assessment (from Contextual Inquiry) ---
+This alert, identified by MITRE Technique T1014 (Rootkit), indicates a possible kernel-level rootkit installation on 'ALU-ORDPROC-PROD-01'. The key Cybersecurity Dimensions for initial investigation are: Process Behavior (to analyze the hidden process '2508'), Host Vulnerability (to check for known exploits affecting 'ALU-ORDPROC-PROD-01'), and Contextual Dimension (to evaluate the criticality of the affected asset).
+
+--- Validated IOCs Used for Plan Generation ---
+{
+  "Timestamp": "2024-05-21T10:05:15.123+0000",
+  "Alert ID": "1716285915.9646311",
+  "Rule ID": "521",
+  "Rule Description": "Possible kernel level rootkit",
+  "MITRE Technique ID": "T1014 \u2013 Rootkit",
+  "Agent ID": "ALU-003",
+  "Agent Hostname": "ALU-ORDPROC-PROD-01",
+  "Agent IP": "10.60.5.25",
+  "Title": "Process '2508' hidden from /proc.",
+  "Location": "rootcheck",
+  "Decoder": "rootcheck"
+}
+
+--- Detailed Investigative Questions and Plans ---
+
+Question 1: Is process '2508' visible in standard Linux process listings (/proc)?
+Detailed Plan:
+**Investigative Plan:**
+*   Objective: Confirm whether process '2508' is indeed hidden from standard Linux process listings (/proc).
+
+*   Key Data Sources/Tools (Prioritized):
+    1.  **Linux Command Line:** Use `ps aux | grep 2508` and `/proc/<pid>/status` to verify process visibility.
+    2.  **Velociraptor:** Query endpoint to check process status across hosts.
+    3.  **Wazuh API:** Search logs for related events (e.g., rootcheck alerts, suspicious processes).
+
+*   Steps & Example Commands/Queries:
+    1.  **Linux CLI (Local Machine):**
+        * Run: `ps aux | grep 2508` to see if process is listed.
+        * Check `/proc/<pid>/status` to confirm its existence.
+    2.  **Velociraptor (Endpoint Query):**
+        * Query: `SELECT * FROM Artifact.Linux.Processes()`
+        * Filter by PID: `WHERE pid = 2508`.
+    3.  **Wazuh API (Log Search):**
+        * Endpoint: `GET /logs/alerts?q=rootcheck AND process:2508`
+        * Look for alerts mentioning process '2508'.
+
+*   Expected Outcome/Interpretation:
+    - ✅ If process '2508' appears in both ps and procfs, it’s normal.
+    - ❌ If process is invisible, escalate to deeper analysis (kernel modules, syscalls, memory forensics).
+--------------------------------------------------
+
+Question 2: What is the parent process of '2508'?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Identify the parent process of PID '2508' to determine its origin and legitimacy.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Velociraptor:** Gather process lineage and related metadata.
+    2.  **Sysdig Falco Logs:** Look for suspicious parent-child relationships.
+    3.  **Linux Auditd Logs:** Analyze system-wide events for anomalies.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **Velociraptor (PID '2508'):**
+        *   Query to retrieve process ancestry:
+        ```sql
+        SELECT pid, ppid, exe, cmdline FROM ProcessAncestry(pid=2508)
+        ```
+        *   Expected Output: Parent PIDs and executable paths.
+
+    2.  **Falco Sysdig Logs (Host: ALU-ORDPROC-PROD-01):**
+        *   Query to filter for suspicious parent processes:
+        ```bash
+        falco | grep '2508' | grep -v '2508' | awk '{print $1}' | sort | uniq -c | sort -nr
+        ```
+        *   Expected Output: Count of occurrences and parent PIDs.
+
+    3.  **Auditd Logs (Host: ALU-ORDPROC-PROD-01):**
+        *   Query to extract process creation events:
+        ```bash
+        journalctl _COMM=auditd | grep 'execve' | grep '2508' | cut -f 2 -d '=' | sort | uniq -c | sort -nr
+        ```
+        *   Expected Output: Count of execve events and parent PIDs.
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If the parent process is a legitimate service or application (e.g., `sshd`, `systemd-journald`), it’s likely benign.
+    - ❌ If the parent is unknown or suspicious (e.g., `/usr/bin/python`), escalate for deeper inspection.
+--------------------------------------------------
+
+Question 3: What capabilities does '2508' possess?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Identify what privileges and capabilities the suspicious process '2508' possesses on the host 'ALU-ORDPROC-PROD-01'.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Velociraptor:** Query Velociraptor to gather detailed information about the process '2508' including its parent processes, open files, network connections, loaded modules, and environment variables.
+    2.  **Sysmon Logs:** Review Sysmon logs to identify any unusual activities performed by the process '2508' such as file modifications, registry changes, or network communications.
+    3.  **Process Explorer:** Use Process Explorer to inspect the process '2508' and determine its parent process, loaded DLLs, and any associated services.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **Velociraptor Query:** Run the following query in Velociraptor to collect detailed information about the process '2508':
+        ```bash
+        SELECT * FROM ProcessInfo WHERE pid = 2508;
+        ```
+        This will return information such as the process name, command line arguments, parent PID, open handles, and more.
+    2.  **Sysmon Log Analysis:** Use the following KQL query in Wazuh to analyze Sysmon logs related to the process '2508':
+        ```kusto
+        EventID == 1 and ProcessId == 2508
+        ```
+        This will retrieve all events related to process creation with PID 2508.
+    3.  **Process Explorer Inspection:** Open Process Explorer and locate the process '2508'. Right-click on the process and select Properties to view its properties, loaded modules, and dependencies.
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If the process '2508' is identified as a legitimate system process or service, no further action is required.
+    - ❌ If the process '2508' is not recognized or appears suspicious based on its parent process, loaded modules, or network activity, proceed to the next step.
+    - ❌ If the process '2508' exhibits signs of malicious behavior such as unauthorized file modifications, registry changes, or network communications, escalate the incident for further investigation.
+--------------------------------------------------
+
+Question 4: Can you retrieve the full command line of '2508' from memory dumps?
+Detailed Plan:
+**Investigative Plan:
+*   Objective: Recover the exact command executed by PID '2508' using memory forensics techniques.
+
+*   Key Data Sources/Tools (Prioritized):
+    1.  Velociraptor Memory Analysis Module: Extract process command line arguments from memory dump.
+    2.  Volatility Framework: Use plugins like 'pslist' and 'psscan' to enumerate processes and extract command lines.
+    3.  Yara Rules: Look for suspicious strings or patterns in memory that might indicate malicious code injection.
+
+*   Steps & Example Commands/Queries:
+    1.  Velociraptor Memory Dump (PID '2508'):
+        *   Command:
+        ```bash
+        velociraptor query "select * from artifact.memory_dump(pid=2508)"
+        ```
+        *   Output: A raw memory dump containing the process context.
+
+    2.  Volatility Plugin (Linux):
+        *   Command:
+        ```bash
+        volatility -f <memory_dump> linux.psscan | grep 2508
+        ```
+        *   Output: List of PIDs matching '2508'.
+
+    3.  Volatility Plugin (Linux):
+        *   Command:
+        ```bash
+        volatility -f <memory_dump> linux.pslist | grep 2508
+        ```
+        *   Output: Detailed process info including command line.
+
+    4.  Yara Rule Scan (Memory Dump):
+        *   Command:
+        ```bash
+        yara -s rules.yar <memory_dump>
+        ```
+        *   Output: Matches against known shellcode signatures.
+
+*   Expected Outcome/Interpretation:
+    - ✅ If we recover the full command line, analyze it for suspicious arguments or scripts.
+    - ❌ If the command line is obfuscated or encrypted, escalate to incident response team for deeper analysis.
+--------------------------------------------------
+
+Question 5: Have any recent kernel updates been applied to 'ALU-ORDPROC-PROD-01'?
+Detailed Plan:
+**Investigative Plan:*** Objective: Confirm if 'ALU-ORDPROC-PROD-01' (Agent ID: ALU-003) has received recent kernel updates, which could indicate mitigation against potential rootkits.
+
+* Key Data Sources/Tools (Prioritized):
+    1. **Linux Kernel Update Logs (Syslog)**: Check system logs for entries related to kernel update installations.
+    2. **Package Manager Logs (Apt/Yum/Dpkg)**: Search package manager logs for kernel-related updates.
+    3. **Configuration Management Tool Logs (Puppet/SaltStack)**: Look for deployment scripts indicating kernel version changes.
+    4. **Security Information and Event Management (SIEM) Integration**: Use Wazuh or similar SIEMs to query for events related to kernel updates.
+
+* Steps & Example Commands/Queries:
+    1. **Kernel Update Log Analysis (Syslog)**:
+        * Command: `grep "kernel update" /var/log/syslog | tail -n 30`
+        * Expected Output: Recent log entries showing successful kernel updates.
+    2. **Package Manager Logs (Apt)**:
+        * Command: `grep "linux-image-" /var/log/apt/history.log | grep -E "[a-z]{4}-[0-9]+" | tail -n 20`
+        * Expected Output: Latest installed kernel versions.
+    3. **Configuration Management Tool Logs (SaltStack)**:
+        * Command: `grep "salt.state" /var/log/salt/minion | grep "kernel_version" | tail -n 50`
+        * Expected Output: Salt states executed on the machine, including kernel version changes.
+    4. **SIEM Query (Wazuh)**:
+        * Endpoint: `GET /alerts?query=event_type:kernel_update AND hostname:ALU-ORDPROC-PROD-01`
+        * Expected Output: Alerts or events related to kernel updates within the last week.
+
+* Expected Outcome/Interpretation:
+    - ✅ If recent kernel updates are confirmed via multiple methods (syslog, package manager logs, config management), it suggests proactive defense against rootkits.
+    - ❌ If no recent updates are found, consider investigating for signs of compromise or outdated kernels.
+--------------------------------------------------
+
+Question 6: Is 'ALU-ORDPROC-PROD-01' running outdated software versions susceptible to rootkits?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Identify outdated software versions on 'ALU-ORDPROC-PROD-01' (Agent ID: ALU-003) that could be exploited by rootkits.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Configuration Management Database (CMDB):** Check installed packages, patches, and version history for critical services (e.g., Apache, MySQL, OpenSSH).
+    2.  **Nessus Scanner:** Run vulnerability scans against 'ALU-ORDPROC-PROD-01' to detect outdated components.
+    3.  **Velociraptor:** Collect system inventory and package lists to verify software versions.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **CMDB Query (via API):**
+        *   Endpoint: `GET /cmdb/systems/{hostname}`
+        *   Query Parameters:
+        ```json
+        {
+          "hostname": "ALU-ORDPROC-PROD-01",
+          "fields": ["installed_packages"]
+        }
+        ```
+        *   Expected Response: JSON object containing list of installed packages and their versions.
+
+    2.  **Nessus Scan (CLI):**
+        *   Command:
+        ```bash
+        nessus_scan -h <agent-ip> -p 8834 -d /tmp/nessus_scan_output.json
+        ```
+        *   Output File: `/tmp/nessus_scan_output.json`
+        *   Expected Results: Vulnerability report showing outdated software versions.
+
+    3.  **Velociraptor Query (via API):**
+        *   Endpoint: `POST /api/v2/query`
+        *   Request Body:
+        ```json
+        {
+          "query": "select * from artifact.linux.package_inventory(host_name=\"ALU-ORDPROC-PROD-01\")"
+        }
+        ```
+        *   Expected Response: List of installed packages and their versions.
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If Nessus/Velociraptor reports outdated software versions (e.g., OpenSSL 1.0.x, PHP 5.6), prioritize patching immediately.
+    - ❌ If all software is up-to-date, focus on investigating the rootkit detection itself.
+--------------------------------------------------
+
+Question 7: Are there any unusual files or directories created under '/root/' or '/etc/' recently?
+Detailed Plan:
+**Investigative Plan:
+*   Objective: Identify any suspicious files/directories created under '/root/' or '/etc/' within the last few days.
+
+*   Key Data Sources/Tools (Prioritized):
+    1.  **Linux Audit Logs (Syslog or Wazuh API):** Look for recent additions to these paths via auditd events or Wazuh logs.
+    2.  **Velociraptor (Host: ALU-ORDPROC-PROD-01):** Use artifact queries to check for new files/dirs in critical locations.
+    3.  **SIEM (Splunk/Wazuh):** Query for log entries showing changes to these paths by users or processes.
+
+*   Steps & Example Commands/Queries:
+    1.  **Audit Log Search (Syslog or Wazuh API):**
+        * Syslog Command:
+        ```bash
+        grep -iE '(^AUDIT|^Added)' /var/log/syslog | grep -E '/root/|/etc/' | tail -n 30
+        ```
+        * Wazuh API Query:
+        ```http
+        GET /agents/ALU-003/logs/summary?q=data.path:/root|data.path:/etc
+        ```
+
+    2.  **Velociraptor (Host: ALU-ORDPROC-PROD-01):**
+        * Query:
+        ```sql
+        SELECT * FROM Artifact.Linux.NewFilesInPath(path='/root/', hostname='ALU-ORDPROC-PROD-01');
+        ```
+        * Repeat for `/etc/`.
+
+    3.  **SIEM Query (Splunk/Wazuh):**
+        * Splunk Query:
+        ```splunk
+        index=wazuh sourcetype="linux_audit" path IN ("/root/", "/etc/") earliest=-24h latest=@d
+        ```
+        * Wazuh Query:
+        ```http
+        GET /search/query?q=path%3A%2Froot%7Cpath%3A%2Fetc&timeframe=-24h@h
+        ```
+
+*   Expected Outcome/Interpretation:
+    - ✅ If new files/dirs are found, especially those not matching system packages or expected scripts, flag them for manual review.
+    - ❌ If nothing suspicious is found, continue monitoring for persistence mechanisms (cron jobs, startup scripts).
+--------------------------------------------------
+
+Question 8: Does 'ALU-ORDPROC-PROD-01' exhibit any anomalous network traffic patterns?
+Detailed Plan:
+**Investigative Plan:***   Objective: Identify unusual outbound connections, suspicious ports, or anomalies in network traffic originating from 'ALU-ORDPROC-PROD-01'.
+
+*   Key Data Sources/Tools (Prioritized):
+    1.  **Zeek Logs (Bro IDS):** Analyze Zeek logs (`conn.log`) for unexpected destinations, high volume, or rare protocols.
+    2.  **NetFlow Analysis:** Use NetFlow records to detect spikes in bandwidth usage or unusual remote hosts.
+    3.  **Wazuh API:** Query Wazuh logs for alerts related to 'ALU-ORDPROC-PROD-01' involving network events.
+
+*   Steps & Example Commands/Queries:
+    1.  **Zeek Log Query (via API):**
+        *   Endpoint: `GET /logs/conn.json`
+        *   Filter by Agent ID:
+        ```json
+        {"agent_id": "ALU-003"}
+        ```
+        *   Look for:
+            *   Unusual destination IPs/domains.
+            *   High-frequency connections to single IPs.
+            *   Rare protocols (e.g., ICMP, DNS over TCP).
+    2.  **NetFlow Analysis (via API):**
+        *   Endpoint: `GET /flows.json`
+        *   Filter by Agent IP:
+        ```json
+        {"agent_ip": "88.88.88.88"}
+        ```
+        *   Aggregate by:
+            *   Destination IP.
+            *   Protocol.
+            *   Bytes transferred.
+    3.  **Wazuh Alert Query (via API):**
+        *   Endpoint: `GET /alerts.json`
+        *   Filter by Agent Name:
+        ```json
+        {"agent_name": "ALU-ORDPROC-PROD-01"}
+        ```
+        *   Look for:
+            *   Alerts tagged as `network_anomaly`.
+            *   Alerts mentioning `unusual_port` or `high_volume_traffic`.
+
+*   Expected Outcome/Interpretation:
+    - ✅ If Zeek logs reveal frequent connections to unknown domains/IPs or rare protocols, flag for deeper inspection.
+    - ❌ If NetFlow shows normal patterns, focus on Wazuh alerts for additional context.
+--------------------------------------------------
+
+Question 9: Are there any additional alerts or logs indicating further compromise attempts on 'ALU-ORDPROC-PROD-01'?
+Detailed Plan:
+**Investigative Plan:*** Objective: Identify follow-up actions based on the rootkit detection (`Process '2508' hidden from /proc.`).
+
+* Key Data Sources/Tools (Prioritized):
+    1. Wazuh API: Search all logs for related events (e.g., suspicious processes, failed logins, network connections).
+    2. Velociraptor: Collect recent process execution logs and system artifacts from 'ALU-ORDPROC-PROD-01'.
+    3. Syslog Server: Review centralized logs for any unusual activities around the time of detection.
+
+* Steps & Example Commands/Queries:
+    1. Wazuh API (Endpoint: `GET /agents/ALU-003/logs/summary?q=agent.hostname:ALU-ORDPROC-PROD-01&rule.description:rootkit`):
+        * Look for alerts with similar descriptions or MITRE IDs (e.g., T1014, T1055, T1036).
+        * Check for repeated occurrences of the same rootkit-related event.
+    2. Velociraptor (Host: `ALU-ORDPROC-PROD-01`):
+        * Run queries to collect:
+            * Recent process executions (`SELECT * FROM artifact.processes()`)
+            * Network connections (`SELECT * FROM artifact.network_connections()`).
+        * Focus on anomalies such as unexpected outbound traffic or unauthorized processes.
+    3. Syslog Server (Query: `grep -i 'ALU-ORDPROC-PROD-01' /var/log/syslog | grep -E 'error|warning|critical'`):
+        * Search for error messages or warnings related to the affected host.
+        * Pay attention to timestamps near the rootkit detection.
+
+* Expected Outcome/Interpretation:
+    - ✅ If multiple alerts or suspicious behaviors are detected, escalate to incident response.
+    - ❌ If only one instance of the rootkit is found, monitor closely for persistence mechanisms.
+--------------------------------------------------
