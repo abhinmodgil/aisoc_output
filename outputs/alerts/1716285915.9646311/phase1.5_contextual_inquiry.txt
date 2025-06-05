@@ -2,15 +2,15 @@
 --- Associated Agent ID: ALU-003 ---
 
 **Initial Alert Assessment and Dimensional Focus:**
-This alert, identified as Rule ID 521 ("Possible kernel level rootkit"), suggests the presence of a rootkit on 'ALU-ORDPROC-PROD-01' (MITRE Technique T1014). Given the nature of a rootkit, key Cybersecurity Dimensions include: Process Behavior (to examine hidden processes), Host Vulnerability (assessing OS/kernel integrity), User Attribution (identifying affected users), Network Behavior (checking for anomalies), IOC in Threat Intel (searching for known rootkit signatures), and Contextual Dimension (understanding the criticality of the affected asset).
+This alert, triggered by Rule ID 521 ("Possible kernel level rootkit"), indicates a potential rootkit infection on 'ALU-ORDPROC-PROD-01'. The MITRE Technique ID T1014 (Rootkit) suggests an attempt to hide processes. Key Cybersecurity Dimensions include: Process Behavior (to detect hidden processes), Host Vulnerability (kernel integrity checks), User Attribution (process owner verification), and Contextual Dimension (system criticality assessment).
 
 **Critical Investigative Questions (Guided by MITRE Technique T1014 and Provided IOCs):**
-1. What processes are currently running on 'ALU-ORDPROC-PROD-01' and their associated PIDs?
-2. How does the process '2508' differ from others in terms of memory usage, CPU consumption, or parent-child relationships?
-3. Is there any evidence of unauthorized code modifications or kernel hooks in the system logs (/var/log/messages)?
-4. Have recent updates or patches been applied to 'ALU-ORDPROC-PROD-01' that could mitigate rootkit risks?
-5. Can we retrieve a full memory dump of 'ALU-ORDPROC-PROD-01' for offline rootkit scanning tools?
-6. Is 'ALU-ORDPROC-PROD-01' configured to run anti-rootkit scans regularly or upon detection triggers?
-7. Are there any additional hosts within the group 'aluskort-prod' exhibiting similar rootkit alerts?
-8. What is the criticality rating of 'ALU-ORDPROC-PROD-01' in terms of business operations and data sensitivity?
-9. Have any unusual outbound connections been observed from 'ALU-ORDPROC-PROD-01' since the alert?
+1. What processes are currently running on 'ALU-ORDPROC-PROD-01' that match the PID '2508'?
+2. Is there any evidence of unauthorized modifications to the kernel or system files?
+3. Have any new kernel modules been loaded since the alert was triggered?
+4. What are the permissions and ownership of the process '2508'?
+5. Can you retrieve the full command line of the process '2508' if available?
+6. Are there any additional alerts or anomalies associated with 'ALU-ORDPROC-PROD-01' around the same time?
+7. How long has the process '2508' been active on the system?
+8. Is there any indication of lateral movement or further compromise of other hosts?
+9. Are there any recent changes or updates to the operating system that could explain the alert?
