@@ -7,9 +7,9 @@ MITRE Technique ID: T1014 – Rootkit
 Agent ID: ALU-003
 Agent Hostname: ALU-ORDPROC-PROD-01
 Agent IP: 10.60.5.25
-Group: aluskort-prod
+Groups: ossec, rootcheck
 Title: Process '2508' hidden from /proc.
-Decoder: rootcheck
+Location: rootcheck
 --- END ---
 ------------------------------------------------------------------------------------
   ✅ Parsed and validated 11 unique IOC key(s).
