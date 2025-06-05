@@ -2,15 +2,15 @@
 --- Associated Agent ID: ALU-001 ---
 
 **Initial Alert Assessment and Dimensional Focus:
-**This alert signals a potential Network Denial of Service (NDoS) attack (MITRE T1498), where 'ALU-WEB-PROD-01' received numerous POST requests from '198.51.100.25' targeting '/cart/add'. NDoS aims to overwhelm resources. Key Cybersecurity Dimensions include: Network Behavior (POST traffic analysis), IOC in Threat Intel (source IP reputation), and Contextual Dimension (web application load and response times).
+**This alert suggests a possible Network Denial of Service (NDoS) attack (MITRE T1498) targeting 'ALU-WEB-PROD-01' via excessive POST requests to '/cart/add'. NDoS aims to overwhelm resources. Key Cybersecurity Dimensions include: Network Behavior (POST traffic patterns), IOC in Threat Intel (source IP reputation), Contextual Dimension (web application load), and Host Vulnerability (potential resource exhaustion).
 
 **Critical Investigative Questions (Guided by MITRE Technique T1498 and Provided IOCs):
-1. How many POST requests did '198.51.100.25' send to '/cart/add' within the observed timeframe?
-2. What was the average request rate per second from '198.51.100.25'?
-3. Did the HTTP status code '200' indicate successful processing of all POST requests?
-4. Were any error codes returned in the W3SVC1 logs for these POST requests?
-5. Does the URL path '/cart/add' handle sensitive operations or financial transactions?
-6. Is the agent 'ALU-WEB-PROD-01' configured to limit concurrent connections or enforce rate limits?
-7. Are there signs of resource exhaustion (CPU, memory, disk I/O) on 'ALU-WEB-PROD-01' during the attack?
-8. Have similar patterns of POST flooding been observed from '198.51.100.25' on other web servers?
-9. Are there additional indicators of compromise (IOCs) associated with '198.51.100.25' in threat intelligence sources?
+1. How many POST requests to '/cart/add' did the source IP '198.51.100.25' send within the timeframe?
+2. Were all POST requests successful (HTTP status code 200)?
+3. What is the average response size (in bytes) for each successful POST request?
+4. Does the URL path '/cart/add' handle sensitive operations or financial transactions?
+5. Is the agent 'ALU-WEB-PROD-01' configured to rate-limit or throttle incoming POST requests?
+6. Have other hosts or services on the same subnet experienced similar POST flooding?
+7. Is the source IP '198.51.100.25' associated with any known DDoS botnet infrastructure?
+8. Can the W3SVC1 logs reveal additional client-side parameters or headers sent in these POST requests?
+9. Are there any signs of further exploitation attempts or lateral movement from 'ALU-WEB-PROD-01'?
