@@ -14,372 +14,431 @@ No initial assessment provided.
   "Agent ID": "ALU-001",
   "Agent Name": "ALU-WEB-PROD-01",
   "Agent IP": "10.50.1.10",
-  "Labels": "group: aluskort-prod",
   "Source IP": "198.51.100.25",
   "HTTP Method": "POST",
   "URL Path": "/cart/add",
   "HTTP Status Code": "200",
+  "Frequency": "8",
+  "Fired Times": "1",
+  "Mail Sent": "False",
+  "Groups": "web, appsec, attack",
+  "PCI DSS Compliance": "6.5, 11.4",
+  "GDPR Compliance": "IV_35.7.d",
+  "NIST 800-53 Compliance": "SA.11, SI.4",
+  "TSC Compliance": "CC6.6, CC7.1, CC8.1, CC6.1, CC6.8, CC7.2, CC7.3",
   "Log Location": "C:\\\\inetpub\\\\logs\\\\LogFiles\\\\W3SVC1\\\\u_ex240521.log",
   "Decoder": "web-accesslog"
 }
 
 --- Detailed Investigative Questions and Plans ---
 
-Question 1: How many POST requests were made to '/cart/add' within the observed timeframe?
+Question 1: Is the source IP '198.51.100.25' associated with known botnet or DDoS activities?
 Detailed Plan:
-**Investigative Plan:**
-*   **Objective:** Count all HTTP POST requests targeting '/cart/add' during the specified timeframe.
+**Investigative Plan:***   **Objective:** Confirm if the source IP '198.51.100.25' is linked to malicious botnets or DDoS campaigns based on threat intelligence.
 
 *   **Key Data Sources/Tools (Prioritized):**
-    1.  **Web Access Logs (C:\\inetpub\\logs\\LogFiles\\W3SVC1\\u_ex240521.log):** Analyze raw IIS logs to extract POST requests matching the URL path.
-    2.  **ELK Stack (Elasticsearch):** Use Kibana’s Discover feature to filter by timestamp, method, and URL path.
-    3.  **Splunk (Optional):** Run a query to count POSTs to '/cart/add'.
+    1.  **Threat Intelligence Feeds (MISP, AlienVault OTX, GreyNoise):** Check for sightings of the IP in recent threat reports, APT lists, or DDoS blacklists.
+    2.  **Public Reputation Services (AbuseIPDB, VirusTotal):** Use free services to query for known botnet associations.
+    3.  **Internal Threat Intel (SIEM Logs, Wazuh Alerts):** Look for prior alerts involving the same IP or similar patterns.
 
 *   **Steps & Example Commands/Queries:**
-    1.  **Raw Log Parsing (Windows Command Prompt):**
-        *   Open log file:
-        ```powershell
-        type C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log | findstr "/cart/add"
-        ```
-        *   Filter for POST requests:
-        ```powershell
-        type C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log | findstr "/cart/add" | findstr POST
-        ```
-        *   Count occurrences:
-        ```powershell
-        $count = (type C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log | findstr "/cart/add" | findstr POST).Count
-        echo $count
-        ```
-
-    2.  **Kibana Discover (Elasticsearch):**
-        *   Navigate to Discover → Select index pattern: `w3c-*`
-        *   Apply filters:
-            *   Timestamp range: 2024-05-21T10:00:00Z TO 2024-05-21T11:00:00Z
-            *   HTTP Method: POST
-            *   URL Path: /cart/add
-        *   Click Statistics → Count documents matching the query.
-
-    3.  **Splunk Query (Optional):**
-        *   Search command:
-        ```splunk
-        sourcetype="access_combined" http_method=POST url="/cart/add" earliest=-10m latest=now | stats count
-        ```
-        *   Alternatively, run a saved search named `POST_Count_Cart_Add`.
-
-*   **Expected Outcome/Interpretation:**
-    - ✅ If the number of POST requests exceeds a threshold (e.g., > 500), consider it suspicious.
-    - ❌ If the request volume appears normal, continue monitoring for anomalies.
---------------------------------------------------
-
-Question 2: Did the source IP '198.51.100.25' send any other types of HTTP requests to 'ALU-WEB-PROD-01'?
-Detailed Plan:
-**Investigative Plan:**
-*   Objective: Analyze all HTTP request logs from 'ALU-WEB-PROD-01' to determine if the source IP '198.51.100.25' made additional requests beyond the detected POSTs.
-
-*   Key Data Sources/Tools (Prioritized):
-    1.  **Web Access Logs (C:\\inetpub\\logs\\LogFiles\\W3SVC1\\u_ex240521.log)**: Review raw IIS logs to extract full request details.
-    2.  **Splunk (Optional):** Use Splunk queries to aggregate and filter by source IP and timestamp range.
-    3.  **ELK Stack (Optional):** Visualize trends using Kibana dashboards.
-
-*   Steps & Example Commands/Queries:
-    1.  **Raw Log Analysis (Windows Command Prompt):**
-        * Open log file:
-        ```powershell
-        type C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log | more
-        ```
-        * Filter by source IP:
-        ```powershell
-        findstr "198.51.100.25" C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log
-        ```
-        * Extract full request details:
-        ```powershell
-        findstr "198.51.100.25" C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log | findstr "POST"
-        ```
-
-    2.  **Splunk Query (Optional):**
-        * Search for all requests from the same source IP:
-        ```kusto
-        index="iis_webserver_logs" sourcetype="web_access_log" srcip="198.51.100.25" | stats count by method url status_code
-        ```
-        * Adjust timeframe:
-        ```kusto
-        index="iis_webserver_logs" sourcetype="web_access_log" srcip="198.51.100.25" earliest=-1h@h latest=@h
-        ```
-
-*   Expected Outcome/Interpretation:
-    - ✅ If the source IP sent multiple types of requests (GET, PUT, DELETE), it could indicate automated scanning or exploitation attempts.
-    - ❌ If only POST requests were observed, focus on analyzing payload contents for malicious intent.
---------------------------------------------------
-
-Question 3: What is the average latency and throughput for '/cart/add' under normal conditions?
-Detailed Plan:
-**Investigative Plan:**
-*   **Objective:** Compare the observed request rate and response times during the attack against baseline metrics to determine if the traffic was anomalous.
-
-*   **Key Data Sources/Tools (Prioritized):**
-    1.  **Application Logs (ELK Stack):** Analyze W3C format logs to extract timestamps and durations.
-    2.  **Performance Metrics (Prometheus/Grafana):** Fetch historical CPU, memory, and I/O usage for the application server.
-    3.  **Network Traffic Analysis (Zeek/Suricata):** Review packet captures to identify unusual flows or spikes in volume.
-
-*   **Steps & Example Commands/Queries:**
-    1.  **ELK Log Parsing (Example Kibana Query):**
-        *   Query:
-        ```kql
+    1.  **MISP Query via API:**
+        *   Endpoint: `GET /attributes/restSearch`
+        *   Query Body:
+        ```json
         {
-            "@timestamp": [now-24h TO now],
-            "message": "/cart/add",
-            "http.response.status_code": 200
-        } | stats avg(duration) by http.request.method
-        ```
-        *   Expected Output: Average duration per method (`POST`) over last 24 hours.
-
-    2.  **Grafana/PromQL (CPU Usage):**
-        *   Query:
-        ```promql
-        sum(rate(node_cpu_seconds_total{mode="idle"}[5m])) by (instance)
-        ```
-        *   Expected Output: CPU idle percentage for the instance hosting the application.
-
-    3.  **Zeek/TCP Flow Analysis (Example Zeek Script):**
-        *   Script:
-        ```lua
-        event tcp_connection(c: connection) {
-            if (c$id$orig_h == 88.88.88.88 && c$id$resp_p == 80) {
-                print("TCP flow detected:", c$id);
-            }
+          "value": "198.51.100.25",
+          "type": "ip-dst"
         }
         ```
-        *   Expected Output: List of TCP connections matching the criteria.
+        *   Expected Output: Tags like `botnet`, `DDoS`, `malicious-ip`.
+    2.  **AbuseIPDB Lookup:**
+        *   URL: `
+        *   Input: `198.51.100.25`
+        *   Expected Output: Bot score, category (e.g., `Bot`, `Scanning`).
+    3.  **VirusTotal Query:**
+        *   URL: `
+        *   Input: `198.51.100.25`
+        *   Expected Output: Malware hits, reputation score.
+    4.  **Wazuh API (Optional):**
+        *   Endpoint: `GET /agents/{agent_id}/alerts`
+        *   Query: `srcip:198.51.100.25`
+        *   Expected Output: Past alerts tied to the IP.
 
 *   **Expected Outcome/Interpretation:**
-    - ✅ If the observed request rate and latency align closely with historical averages, the traffic might have been legitimate.
-    - ❌ If the traffic deviated significantly from baselines (e.g., higher than usual request rates, lower than expected latencies), it could indicate malicious intent.
+    - ✅ If the IP is tagged as `botnet`, `DDoS`, or `malicious` in MISP or other TI feeds, flag it immediately.
+    - ❌ If the IP appears clean in all checks, continue monitoring for unusual traffic patterns.
 --------------------------------------------------
 
-Question 4: Were any other applications or services on 'ALU-WEB-PROD-01' impacted during the POST flood?
+Question 2: How many total POST requests did '198.51.100.25' send to 'ALU-WEB-PROD-01'?
 Detailed Plan:
-**Investigative Plan:**
-*   **Objective:** Identify if other applications/services on 'ALU-WEB-PROD-01' were affected by the same POST flood event.
-
-*   **Key Data Sources/Tools (Prioritized):**
-    1.  **Application Logs (W3C format):** Analyze application-specific logs for unusual spikes in traffic or errors around the same timestamp.
-    2.  **Performance Monitoring Tools (Optional):** Use IIS Performance Monitor counters to detect CPU/memory spikes or high error rates.
-    3.  **Sysmon Event Logs (Optional):** Look for Sysmon events indicating abnormal network activity or process creation.
-
-*   **Steps & Example Commands/Queries:**
-    1.  **Review Application Logs (W3C Format):**
-        *   Open W3C log files (`C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log`) using a text editor or log analysis tool.
-        *   Filter for POST requests matching the same timestamp range as the initial alert:
-            ```bash
-            grep -E '^2024-05-21.*POST.*200' u_ex240521.log | sort -k 3,3n
-            ```
-        *   Look for similar POSTs to `/cart/add` or other endpoints.
-        *   Check for HTTP status codes 429 (Too Many Requests), 503 (Service Unavailable), or 500 (Internal Server Error).
-    2.  **Check Performance Counters (Optional):**
-        *   Open Performance Monitor MMC snap-in (`perfmon.msc`).
-        *   Navigate to Performance > Monitoring Tools > Performance Monitor.
-        *   Add these counters:
-            -   Web Service (_Total_)\>Requests/sec
-            -   Process(_Total_)\>Private Bytes
-            -   Processor(_Total_)\>% Processor Time
-            -   Memory(_Total_)\>Pages/sec
-        *   Set the timeframe filter to match the suspicious POST activity window.
-    3.  **Review Sysmon Events (Optional):**
-        *   Open Windows Event Viewer (`eventvwr.exe`).
-        *   Go to Applications and Services Logs \> Microsoft \> Windows \> Sysmon.
-        *   Filter for events related to network connections, process creations, or DNS queries around the same timestamps.
-        *   Look for anomalies such as multiple processes connecting to the same external IPs or unusually large DNS lookups.
-
-*   **Expected Outcome/Interpretation:**
-    - ✅ If other apps/services also had significant POST traffic or performance degradation at the same time, it confirms widespread impact.
-    - ❌ If only one app was affected, focus on its specific configurations or dependencies.
---------------------------------------------------
-
-Question 5: Does the URL path '/cart/add' handle sensitive operations or financial transactions?
-Detailed Plan:
-**Investigative Plan:**
-*   **Objective:** Assess whether the `/cart/add` endpoint processes sensitive actions (payment, personal info, etc.) that could be exploited by attackers.
-
-*   **Key Data Sources/Tools (Prioritized):**
-    1.  **Application Logs (Local):** Analyze local W3SVC1 log files (`C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log`) for error codes, exceptions, or unusual behaviors tied to `/cart/add`.
-    2.  **Web Application Firewall (WAF) Logs (Optional):** Review WAF logs (e.g., Azure WAF, ModSecurity) for blocked or suspicious requests targeting `/cart/add`.
-    3.  **Application Codebase (Optional):** Examine backend code handling `/cart/add` to identify sensitive operations or data flows.
-
-*   **Steps & Example Commands/Queries:**
-    1.  **Local Log Analysis (Windows Event Viewer or grep):**
-        *   Search for errors or warnings related to `/cart/add`:
-        ```bash
-        grep "/cart/add" C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log | grep -i "error|warning"
-        ```
-        *   Look for HTTP status codes > 400 (e.g., 500, 404, 403).
-    2.  **WAF Logs (Azure/AWS/GCP Console):**
-        *   Filter events for `/cart/add` under "Anomaly Detection" or "Threat Protection".
-        *   Look for blocked requests with signatures like SQL injection, XSS, or command injection.
-    3.  **Codebase Inspection (grep, IDE Search):**
-        *   Locate all references to `/cart/add` in application code (controllers, models, views).
-        *   Identify functions/methods that modify or store payment-related data (e.g., credit card numbers, billing addresses).
-
-*   **Expected Outcome/Interpretation:**
-    - ✅ If the analysis reveals sensitive operations (e.g., storing PII, processing payments), tighten access controls, enforce rate limiting, and consider moving to HTTPS.
-    - ❌ If `/cart/add` only handles non-sensitive actions (e.g., adding items to cart without payment), focus on monitoring for brute force attempts or DDoS attacks.
---------------------------------------------------
-
-Question 6: Is the source IP '198.51.100.25' listed in any threat intelligence feeds as a known DDoS agent?
-Detailed Plan:
-**Investigative Plan:**
-*   Objective: Determine if the source IP '198.51.100.25' is associated with malicious activities such as DDoS attacks based on its presence in threat intelligence databases.
+**Investigative Plan:***   Objective:*   Count all POST requests sent by '198.51.100.25' to 'ALU-WEB-PROD-01'.
 
 *   Key Data Sources/Tools (Prioritized):
-    1.  Threat Intelligence Feeds (MISP, AlienVault OTX, VirusTotal, GreyNoise): Check for any existing reports or sightings of the IP being involved in DDoS campaigns or brute force attempts.
-    2.  Wazuh API: Analyze logs from the affected server to identify patterns or anomalies related to the source IP.
-    3.  Firewall Logs: Review firewall logs to determine if there were any unusual spikes in traffic originating from the same IP.
+    1.  Wazuh API (agent ID: ALU-001):
+        *   Endpoint: `GET /agents/ALU-001/logs/summary?q=data.http.method:POST AND data.source.ip:198.51.100.25`
+        *   Use pagination if large volume.
+    2.  Velociraptor (hostname: ALU-WEB-PROD-01):
+        *   Query:
+            ```sql
+            SELECT COUNT(*) AS post_count FROM Artifact.Windows.IISLogs(Hostname="ALU-WEB-PROD-01") WHERE RequestMethod="POST" AND ClientAddress="88.88.88.88";
+            ```
+        *   Ensure IIS logging is enabled and configured correctly.
+    3.  Splunk (index: iis_logs):
+        *   Query:
+            ```sql
+            index=iis_logs sourcetype=iis:access ClientIP="88.88.88.88" RequestMethod="POST" | stats count by ClientIP | sort - count
+            ```
+        *   Requires proper indexing and parsing setup.
 
 *   Steps & Example Commands/Queries:
-    1.  Threat Intelligence Queries:
-        *   MISP Query:
+    1.  Wazuh API (agent ID: ALU-001):
+        *   Command:
             ```bash
-            # Fetch all attributes tagged with "DDoS"
-            curl -s | jq '.[] | select(.type == "ip-src") |.value'
+            curl -s -H "Authorization: Bearer <token>" | jq '.data[].events[] | select(.data.http.method == "POST" &&.data.source.ip == "198.51.100.25") |.timestamp' | wc -l
             ```
-        *   AlienVault OTX Query:
-            ```python
-            import requests
-            
-            url = "
-            headers = {"Authorization": "Bearer <your_api_key>"}
-            response = requests.get(url, headers=headers)
-            print(response.json())
-            ```
-        *   VirusTotal Query:
-            ```bash
-            virustotal-api-key="<your_api_key>"
-            curl -H "x-apikey: $virustotal-api_key" \
-                "
-            ```
-        *   GreyNoise Query:
-            ```bash
-            curl -H "Content-Type: application/json" -d '{"filters":{"ip":"88.88.88.88"}}' \
-                
-            ```
-    2.  Wazuh Log Analysis:
-        *   Query Wazuh API for logs related to the source IP:
-            ```bash
-            curl -s " | jq '.data[].message'
-            ```
-    3.  Firewall Log Analysis:
-        *   Use firewall logs to identify any unusual traffic patterns:
-            ```bash
-            grep "198\.51\.100\.25" /var/log/firewall.log
-            ```
+        *   Output: Total number of matching events.
+    2.  Velociraptor (hostname: ALU-WEB-PROD-01):
+        *   Run query above.
+        *   Expected result: Number of POST requests.
+    3.  Splunk (index: iis_logs):
+        *   Execute query above.
+        *   Expected result: Same as previous methods.
 
 *   Expected Outcome/Interpretation:
-    - ✅ If the IP is found in multiple TI feeds with confirmed DDoS activity, it’s highly likely malicious.
-    - ❌ If the IP is clean across all sources, investigate further using geo-location, ASN analysis, and correlation with other events.
+    - ✅ If the count is low (e.g., less than 20), consider it normal traffic.
+    - ❌ If the count is high (e.g., more than 500), investigate further for potential brute force or DDoS attempts.
 --------------------------------------------------
 
-Question 7: Have similar POST floods been observed on other servers in the environment?
+Question 3: What is the average request rate per second from '198.51.100.25'?
 Detailed Plan:
-**Investigative Plan:
-*   Objective: Identify if there have been previous instances of high-volume POST requests targeting different hosts within the organization.
+**Investigative Plan:**
+*   **Objective:** Calculate the average request rate per second from the source IP '198.51.100.25'.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Web Access Logs (C:\\inetpub\\logs\\LogFiles\\W3SVC1\\u_ex240521.log)**: Analyze raw log entries to count requests per second.
+    2.  **ELK Stack (Elasticsearch + Kibana)**: Use pre-built dashboards or custom queries to visualize and calculate request rates over time.
+    3.  **Splunk (Optional)**: Search historical logs for spikes or anomalies in request volume by IP.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **Raw Log Analysis (Windows Command Prompt):**
+        * Open command prompt and navigate to the log directory:
+        ```cmd
+        cd C:\inetpub\logs\LogFiles\W3SVC1
+        ```
+        * Count the number of requests per second using PowerShell:
+        ```powershell
+        $count = Get-Content u_ex240521.log | Where-Object { $_ -match '198\.51\.100\.25' } | Measure-Object -Word | Select-Object -ExpandProperty Words
+        $ratePerSec = ($count / 300) # Assuming 5-minute interval between logs
+        Write-Output "Average Request Rate Per Second: $ratePerSec"
+        ```
+        * Output:
+        ```txt
+        Average Request Rate Per Second: 8.33333333333333
+        ```
+
+    2.  **ELK Stack (Kibana Dashboard or Custom Query):**
+        * Navigate to Kibana → Dashboards → Web Access Metrics.
+        * Filter by source IP '198.51.100.25' and select a time range (e.g., last hour).
+        * Use the built-in query:
+        ```kql
+        avg(rate) by source_ip
+        ```
+        * Interpretation: Averaging the rate column gives you the average request rate per second.
+
+    3.  **Splunk (Optional):**
+        * Search for spikes in request volume:
+        ```splunk
+        index="web_logs" sourcetype="access_combined" clientip="198.51.100.25" | timechart span=1m count by clientip
+        ```
+        * Visualize results in Splunk’s built-in charts.
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If the calculated rate matches the expected traffic level, consider it benign.
+    - ❌ If the rate exceeds normal thresholds (e.g., > 20 req/sec), investigate further for potential DDoS or brute force attempts.
+--------------------------------------------------
+
+Question 4: Did any other users or IPs experience similar high-frequency POST requests around the same time?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Identify additional users or source IPs exhibiting unusually frequent POST requests to '/cart/add' within a short timeframe.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Web Access Logs (C:\\inetpub\\logs\\LogFiles\\W3SVC1\\u_ex240521.log):** Analyze recent logs for other users/IPs making multiple POST requests to '/cart/add'.
+    2.  **SIEM (Splunk/Wazuh):** Use queries to search for other events matching the pattern (POST to '/cart/add', high frequency).
+    3.  **Endpoint Monitoring Tools (Elastic Agent/Velociraptor):** Check for unusual network activity or processes related to shopping cart software.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **Web Access Log Analysis (Example Command):**
+        *   PowerShell command:
+        ```powershell
+        Get-Content C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log | Select-String -Pattern '"POST /cart/add"' | Measure-Object -Line | Select-Object Count
+        ```
+        *   Output: Number of occurrences of POST requests to '/cart/add'.
+    2.  **SIEM Query (Splunk/Wazuh):**
+        *   Splunk query:
+        ```kusto
+        index=w3c sourcetype="access_combined" status=200 method="POST" uri="/cart/add" | stats count by clientip
+        ```
+        *   Wazuh query:
+        ```http
+        GET /alerts?query=status:200 AND method:POST AND uri:/cart/add
+        ```
+        *   Expected results: List of top clients making POST requests to '/cart/add'.
+    3.  **Endpoint Monitoring Tool Query (Velociraptor/Elastic):**
+        *   Velociraptor query:
+        ```yaml
+        SELECT * FROM endpoint.events() WHERE event_type IN ("network_connection", "process_started") AND timestamp > now() - 1h
+        ```
+        *   Elastic query:
+        ```http
+        GET /api/events/_search?q=event.type:(network_connection OR process_started) AND event.action:(tcp OR udp) AND @timestamp:[now-1h TO now]
+        ```
+        *   Expected results: Any suspicious connections or processes initiated during the timeframe.
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If other users/IPs also made frequent POST requests to '/cart/add' around the same time, it suggests a coordinated attack or misconfiguration.
+    - ❌ If only one user/IP was affected, focus on investigating their session, device, or account for signs of compromise.
+--------------------------------------------------
+
+Question 5: Are there any unusual parameters or payloads being sent in the POST requests?
+Detailed Plan:
+**Investigative Plan:**
+*   Objective: Identify any suspicious payload or parameter values in the POST requests to determine if they indicate malicious intent.
 
 *   Key Data Sources/Tools (Prioritized):
-    1.  **SIEM (Splunk/Wazuh/Elasticsearch):** Search for alerts matching the same pattern (POST flood) across all monitored hosts.
-    2.  **Endpoint Agents (Velociraptor/Crowdstrike/Falcon):** Query endpoint telemetry for unusual network activity (e.g., excessive HTTP POSTs).
-    3.  **Network Logs (Zeek/Suricata/NetFlow):** Look for spikes in POST traffic volume over time.
+    1.  Web Access Logs: Analyze the log entries related to the POST requests to extract the request bodies and identify any anomalies.
+    2.  WAF Logs (if available): Review any logs generated by the Web Application Firewall (WAF) to see if any rules were triggered based on the request content.
+    3.  Packet Capture (PCAP) Analysis: Examine network traffic captures around the time of the alert to look for unusual HTTP headers or payloads.
 
 *   Steps & Example Commands/Queries:
-    1.  **SIEM (Splunk Query):**
-        *   Query:
+    1.  Extract Request Bodies from Log Files:
+        * Use a tool like Log Parser or PowerShell to parse the web access logs and extract the request bodies.
+        * Example command using Log Parser:
+        ```powershell
+        logparser.exe "SELECT cs-uri-query FROM C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log WHERE sc-status = '200' AND cs-method = 'POST'"
+        ```
+    2.  Review WAF Logs:
+        * If a WAF is deployed, query its logs for any blocked requests matching the alert criteria.
+        * Example query using Splunk:
         ```kusto
-        index="web_logs" sourcetype="access_combined" http_method="POST" | stats count by host, http_method | sort -count
+        index=waf sourcetype="waf:access" status=403 cs-uri-path=/cart/add cs-method=POST | stats count by cs-uri-query
         ```
-        *   Expected Results: A list of hosts experiencing frequent POST requests, ranked by volume.
-
-    2.  **Endpoint Agent (Velociraptor Query):**
-        *   Query:
-        ```python
-        select netconn_events where event_type == "NETWORK_CONNECT" and protocol == "tcp" and destination_port == 80 and request_method == "POST"
+    3.  PCAP Analysis:
+        * Use Wireshark or tcpdump to analyze packet captures taken during the timeframe of the alert.
+        * Look for unusual HTTP headers such as User-Agent, Content-Type, or unexpected request methods.
+        * Example filter in Wireshark:
+        ```plaintext
+        http.request.method == "POST" && ip.src == "88.88.88.88"
         ```
-        *   Expected Results: List of endpoints showing repeated POST connections to port 80.
 
-    3.  **Network Log (Zeek/TCPDump):**
+*   Expected Outcome/Interpretation:
+    - ✅ If the request bodies contain suspicious parameters like `cmd=ping`, `cmd=id`, or other system commands, flag them as potentially malicious.
+    - ❌ If all POST requests appear normal and do not include any obvious signs of exploitation, continue monitoring for similar patterns.
+--------------------------------------------------
+
+Question 6: Does the URL path `/cart/add` represent a legitimate endpoint on 'ALU-WEB-PROD-01'?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Confirm whether '/cart/add' is a valid endpoint on 'ALU-WEB-PROD-01'.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Web Application Firewall (WAF) Logs:** Review WAF logs for any blocked requests to '/cart/add'.
+    2.  **Application Server Logs:** Examine application server logs for any related entries (e.g., Spring Boot, ASP.NET).
+    3.  **Endpoint Mapper (Optional):** Use an endpoint mapping tool to validate if '/cart/add' is defined in the application.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **WAF Logs (Splunk/Sentinel):**
+        *   Query to retrieve recent WAF events:
+        ```sql
+        index=waf sourcetype="waf:web" url_path="/cart/add" | stats count by src_ip, dest_port, http_status_code
+        ```
+        *   Look for any blocked requests (`status_code=403`) or allowed requests (`status_code=200`).
+
+    2.  **Application Server Logs (ELK Stack):**
+        *   Query to fetch application logs:
+        ```sql
+        index=app sourcetype="application:server" message="POST /cart/add" | stats count by request_id, user_agent
+        ```
+        *   Check for successful responses (`response_code=200`) or errors (`response_code!=200`).
+
+    3.  **Endpoint Mapping Tool (Optional):**
+        *   Command to query endpoint mapper:
+        ```bash
+        curl -s 
+        ```
+        *   Expected response:
+            ```json
+            [
+                "/cart/add",
+                "/cart/remove",
+                "/checkout"
+            ]
+            ```
+        *   If '/cart/add' is not present, it could indicate a misconfiguration or malicious attempt.
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If WAF allows and application logs confirm successful processing, it’s likely a valid endpoint.
+    - ❌ If WAF blocks or application logs show errors, investigate further for potential exploitation.
+--------------------------------------------------
+
+Question 7: Are there any additional logs or alerts indicating resource exhaustion or performance degradation on 'ALU-WEB-PROD-01'?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Identify signs of resource exhaustion or performance degradation on 'ALU-WEB-PROD-01' triggered by high-frequency POST requests to '/cart/add'.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Windows Event Logs (Event ID 1102):** Monitor for system-wide event log warnings about excessive I/O operations or CPU usage spikes.
+    2.  **Performance Monitor (perfmon.exe):** Check for memory/CPU/disk utilization trends over the last hour.
+    3.  **Application Logs (C:\\inetpub\\logs\\LogFiles\\W3SVC1\\u_ex240521.log):** Analyze recent application logs for HTTP 429 errors, slow response times, or failed requests.
+    4.  **Sysmon Events (ID 3, 22):** Look for suspicious child processes spawned by w3wp.exe or unusual network connections initiated by the web server.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **Windows Event Log Query (Event ID 1102):**
+        *   Command: `wevtutil qe Application /q:"*[System[(Level=2 or Level=3)]] and *[EventData[Data[@Name='param1']and(Data='excessive i/o')]or [EventData[Data[@Name='param2']and(Data='high cpu usage')]]]"`
+        *   Expected Output: Timestamps, thread IDs, and error messages related to I/O or CPU overload.
+
+    2.  **Perfmon.exe Monitoring (CPU Usage):**
+        *   Command: `perfmon.exe /select _total /chart type=line /instances "% Processor Time" /sample interval=50000 /showallvalues`
+        *   Expected Output: A line chart showing CPU usage every 50 seconds.
+
+    3.  **Application Log Analysis (Last Hour):**
+        *   Command: `type C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log | findstr "/cart/add" | findstr "429"`
+        *   Expected Output: Any entries matching `/cart/add` and including `HTTP Error 429`.
+
+    4.  **Sysmon Process Creation (w3wp.exe Child Processes):**
+        *   Command: `Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-Sysmon/Operational';ID=3;StartTime="2024-05-21T09:00"} | Where-Object {$_.Properties[16] -like "*w3wp.exe*"}`
+        *   Expected Output: Process names and creation timestamps of child processes spawned by w3wp.exe.
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If Windows events indicate disk saturation (`Event ID 1102`) or CPU spikes (`Event ID 1102`), and perfmon shows sustained high loads, then it’s likely a resource bottleneck.
+    - ❌ If only the W3SVC1 logs show frequent POST failures without corroborating system-level warnings, focus on optimizing the application code or load balancing.
+--------------------------------------------------
+
+Question 8: Have any security controls like WAF or rate limiting been triggered due to these POST requests?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Confirm if any security controls (like WAF, rate limiters, etc.) have blocked or logged suspicious POST requests to `/cart/add`.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Web Application Firewall Logs (WAF):** Check for any block events related to POST requests to `/cart/add`.
+    2.  **Rate Limiting Logs:** Look for excessive POSTs within short intervals.
+    3.  **SIEM (Splunk/Wazuh):** Search for any alerts or logs mentioning HTTP 403, 429, or similar errors.
+    4.  **Application Logs (Windows Event Viewer):** Review application-specific logs for unusual POST activities.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **WAF Log Analysis (Example using ModSecurity):**
         *   Command:
         ```bash
-        grep "POST /cart/add" /var/log/zeek/tcp.log | awk '{print $9}' | cut -d''-f1 | sort | uniq -c | sort -nr
+        grep "POST /cart/add" /var/log/modsec_audit.log | grep "blocked"
         ```
-        *   Expected Results: Top IPs making POST requests to `/cart/add`.
-
-*   Expected Outcome/Interpretation:
-    - ✅ If multiple hosts show similar POST flood patterns, it suggests a coordinated attack or misconfiguration.
-    - ❌ If only one host shows the issue, focus on local analysis (endpoint logs, application logs) to determine cause.
---------------------------------------------------
-
-Question 8: Are there any rate limiting or CAPTCHA mechanisms implemented for '/cart/add'?
-Detailed Plan:
-**Investigative Plan: 
-**
-*   Objective: Determine if the application has built-in protections against brute-force attacks targeting '/cart/add'.
-
-*   Key Data Sources/Tools (Prioritized):
-    1.  Application Logs (C:\\inetpub\\logs\\LogFiles\\W3SVC1\\u\_ex240521.log): Analyze recent log entries for '/cart/add' to see if there are multiple failed attempts followed by successful ones.
-    2.  Web Application Firewall (WAF) Config: Review WAF ruleset to ensure it blocks excessive POSTs to '/cart/add'.
-    3.  Rate Limiting Configuration: Check IIS settings or custom middleware to verify if request throttling is enabled.
-    4.  Authentication Mechanisms: Examine if the endpoint requires session cookies, CSRF tokens, or other anti-forgery measures.
-
-*   Steps & Example Commands/Queries:
-    1.  Log Analysis (Example Query):
-        *   PowerShell Command:
-        ```powershell
-        Get-Content C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log | Select-String "/cart/add" | Measure-Object -Line
+        *   Expected Output:
+        ```text
+        [06/May/2024:13:00:00 +0200] 88.88.88.88 POST /cart/add - 403 200 "-" "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)"
         ```
-        *   Expected Output: Number of occurrences of '/cart/add' in last hour.
-    2.  WAF Ruleset Inspection:
-        *   Manual Review: Open WAF config files (`C:\Program Files\Microsoft\Exchange Server\V15\FrontEnd\HttpProxy\waf\config.xml`) and look for rules matching `/cart/add`.
-    3.  Rate Limiting Settings:
-        *   IIS Manager: Navigate to `Application Pools > DefaultAppPool > Advanced Settings` and check `Limits > Maximum concurrent requests per CPU`.
-    4.  Authentication Checks:
-        *   Inspect Request Headers: Use Fiddler or Burp Suite to capture headers sent during POST requests to '/cart/add'. Look for session IDs, CSRF tokens, or other security headers.
+        *   Interpretation: A request was blocked by the WAF due to suspicious parameters or headers.
 
-*   Expected Outcome/Interpretation:
-    - ✅ If logs show failed POSTs followed by success within short intervals, or WAF rules block excessive traffic, it indicates proper protection.
-    - ❌ If logs show only failed POSTs without success, or WAF does not have rules for '/cart/add', consider implementing rate limits or CAPTCHA challenges.
---------------------------------------------------
+    2.  **Rate Limiting Logs (Example using Nginx):**
+        *   Command:
+        ```bash
+        cat /var/log/nginx/access.log | grep "/cart/add" | sort | uniq -c | awk '{print $2}' | sort | uniq -c | sort -n
+        ```
+        *   Expected Output:
+        ```text
+        20 88.88.88.88 - - [21/May/2024:14:00:00 +0200] "POST /cart/add" 200
+        19 88.88.88.88 - - [21/May/2024:14:00:00 +0200] "POST /cart/add" 200
+       ...
+        ```
+        *   Interpretation: Multiple POST requests were made within a short interval, indicating possible brute force attempts.
 
-Question 9: Can the web server logs on 'ALU-WEB-PROD-01' provide additional insights into the request patterns?
-Detailed Plan:
-**Investigative Plan:***   Objective: Analyze recent web server logs on 'ALU-WEB-PROD-01' to identify any unusual patterns related to the suspicious POST requests from '198.51.100.25'.
-
-*   Key Data Sources/Tools (Prioritized):
-    1.  **Web Access Logs (C:\\inetpub\\logs\\LogFiles\\W3SVC1\\u\_ex240521.log):** Examine the raw log entries for the specified timeframe around the alert timestamp.
-    2.  **ELK Stack (Elasticsearch/Kibana):** Use Kibana’s query language to filter and visualize the logs based on the alert criteria.
-    3.  **Splunk (Optional):** Perform advanced searches and create dashboards to analyze trends over time.
-
-*   Steps & Example Commands/Queries:
-    1.  **Raw Log Analysis (Windows Event Viewer or CLI):**
-        * Open the log file at `C:\inetpub\logs\LogFiles\W3SVC1\u_ex240521.log`.
-        * Filter by date range (`2024-05-21 09:00:00` to `2024-05-21 11:00:00`) and HTTP method (`POST`).
-        * Look for anomalies such as high volume of requests, unusual User-Agent strings, or repeated paths.
-
-    2.  **Kibana Query (Using Elastic Common Schema fields):**
-        * Navigate to Kibana → Discover → Select Index Pattern `w3c-*`.
-        * Apply filters:
-            * `clientip: 88.88.88.88`
-            * `method: POST`
-            * `path: /cart/add`
-            * `response.keyword: 200`
-        * Sort by `@timestamp` to view events chronologically.
-        * Inspect the `user_agent.original` field for any signs of automation or malicious bots.
-
-    3.  **Splunk Search (Optional):**
-        * In Splunk, run the following search:
+    3.  **SIEM Query (Splunk Example):**
+        *   Query:
         ```splunk
-        index=w3c sourcetype="access_combined" clientip="88.88.88.88" method="POST" path="/cart/add" response=200
-        | stats count by user_agent, status_code, path
-        | sort - count
+        index=waf sourcetype="waf:modsec" http_method=POST uri=/cart/add status=403
         ```
-        * Visualize results using a line chart to see hourly trends.
+        *   Expected Output:
+        ```text
+        {"time": "2024-05-21T14:00:00Z", "client_ip": "88.88.88.88", "request_uri": "/cart/add", "status_code": 403}
+        ```
+        *   Interpretation: A POST request to `/cart/add` resulted in a 403 response, likely due to WAF blocking.
+
+    4.  **Application Logs (Event Viewer):**
+        *   Command:
+        ```powershell
+        Get-EventLog -LogName Application -InstanceId 4688 | Where-Object {$_.Message -match "POST /cart/add"}
+        ```
+        *   Expected Output:
+        ```text
+        2024-05-21T14:00:00.000Z ProcessId=1234, CommandLine="C:\Program Files\MyApp.exe /cart/add", User="SYSTEM"
+        ```
+        *   Interpretation: An application log entry showing a suspicious POST request.
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If WAF blocks or rate limits are triggered, it confirms malicious intent.
+    - ❌ If nothing is found, proceed with deeper analysis of network traffic and endpoint logs.
+--------------------------------------------------
+
+Question 9: Does the PCI DSS compliance requirement 6.5 suggest any mitigation steps for this type of traffic?
+Detailed Plan:
+**Investigative Plan:**
+*   Objective: Identify and implement appropriate PCI DSS 6.5 controls to mitigate high-frequency POST requests targeting '/cart/add'.
+
+*   Key Data Sources/Tools (Prioritized):
+    1.  **Web Application Firewall (WAF):** Review WAF rules and configurations to block or rate-limit suspicious POST requests.
+    2.  **SIEM Logs:** Analyze recent web server logs for similar patterns or anomalies.
+    3.  **Application Performance Monitoring (APM):** Monitor application performance metrics to detect abnormal load spikes.
+
+*   Steps & Example Commands/Queries:
+    1.  **Review WAF Rules:**
+        *   Command: `wafconfig list-rules | grep "/cart/add"`
+        *   Action: Ensure existing rules block or rate-limit excessive POST requests.
+    2.  **Analyze Web Server Logs:**
+        *   Query: `grep "/cart/add" u_ex240521.log | wc -l`
+        *   Interpretation: Count occurrences of `/cart/add` requests per minute/hour/day.
+    3.  **Monitor APM Metrics:**
+        *   Tool: New Relic, Datadog, Dynatrace
+        *   Metric: Average response time, error rate, CPU usage during peak periods.
 
 *   Expected Outcome/Interpretation:
-    - ✅ If the logs reveal a sudden spike in POST requests from '198.51.100.25', especially with multiple failed attempts or unusual User-Agents, it could indicate automated brute-force attacks.
-    - ❌ If the logs show normal traffic patterns without spikes, focus on correlating the event with other security telemetry (firewall logs, IDS alerts).
+    - ✅ If WAF blocks malicious requests, monitor effectiveness over time.
+    - ❌ If logs show sustained high volume, consider rate limiting or CAPTCHA challenges.
+    - ❌ If APM shows performance degradation, optimize backend processing or scale resources.
+--------------------------------------------------
+
+Question 10: Should we consider blocking '198.51.100.25' temporarily while investigating further?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Assess whether temporary blocking of '198.51.100.25' is justified based on the observed HTTP traffic pattern.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **SIEM (Splunk/Wazuh/Elasticsearch):** Analyze recent log entries for '198.51.100.25'.
+    2.  **Firewall Logs (Palo Alto/Cisco ASA/PfSense):** Check for existing rules or attempts to block the IP.
+    3.  **Network Flow Analysis (Zeek/Suricata):** Look for unusual network flows involving '198.51.100.25'.
+    4.  **Threat Intelligence Feeds (MISP/VirusTotal/AlienVault OTX):** Cross-check the IP against known malicious entities.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **SIEM Log Search (Splunk Query):**
+        *   `index="web_logs" src_ip="198.51.100.25"`
+        *   `| stats count by status_code method url`
+        *   `| sort -count`
+        *   `| head 20`
+        *   `| eval risk_level=case(status_code==403,"High",status_code==404,"Medium",status_code>400,"Low")`
+        *   `| table _time, src_ip, status_code, method, url, count, risk_level`
+
+    2.  **Firewall Rule Check (CLI Command):**
+        *   `show ip nat translation outside 198.51.100.25`
+        *   `show access-lists | include 198.51.100.25`
+        *   `show running-config | grep deny 198.51.100.25`
+
+    3.  **Network Flow Analysis (Suricata Query):**
+        *   `grep "198.51.100.25" /var/log/zeek/conn.log`
+        *   `cat /var/log/suricata/fast.log | grep "198.51.100.25"`
+
+    4.  **Threat Intel Lookup (VirusTotal API):**
+        *   `curl -X GET "
+        *   `jq '.data.reputation'`
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If the IP shows repeated high-risk activities (403/404 errors, excessive POSTs), blocking might be prudent until full analysis.
+    - ❌ If the IP appears benign or only exhibits normal traffic patterns, do not block unless confirmed malicious via additional checks.
 --------------------------------------------------
