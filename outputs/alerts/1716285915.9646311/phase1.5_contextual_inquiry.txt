@@ -2,15 +2,15 @@
 --- Associated Agent ID: ALU-003 ---
 
 **Initial Alert Assessment and Dimensional Focus:**
-This alert, identified by MITRE Technique T1014 (Rootkit), detects a possible kernel-level rootkit on 'ALU-ORDPROC-PROD-01'. The key Cybersecurity Dimensions for initial investigation are: Process Behavior (to examine hidden processes), Host Vulnerability (kernel exploit assessment), User Attribution (to determine the affected user/group), and Contextual Dimension (to evaluate the criticality of the affected host).
+This alert, identified by MITRE Technique T1014 (Rootkit), indicates a possible kernel-level rootkit installation on 'ALU-ORDPROC-PROD-01'. The key Cybersecurity Dimensions for initial investigation are: Process Behavior (to analyze the hidden process '2508'), Host Vulnerability (to check for known exploits affecting 'ALU-ORDPROC-PROD-01'), and Contextual Dimension (to evaluate the criticality of the affected asset).
 
 **Critical Investigative Questions (Guided by MITRE Technique T1014 and Provided IOCs):**
-1. What exactly is the rootkit hiding? Is it a process, file, or network connection?
-2. How did the rootkit manage to hide itself from the /proc directory?
-3. What is the parent process of the hidden process ('2508')?
-4. Is there any indication of unauthorized code modification in the kernel space?
-5. Have there been any recent updates or patches applied to 'ALU-ORDPROC-PROD-01'?
-6. Are there any other alerts or anomalies associated with 'ALU-ORDPROC-PROD-01' around the same time?
-7. Can we retrieve the full command history or system logs for the affected user/group?
-8. Is there any evidence of lateral movement or compromise of other hosts within the aluskort-prod group?
-9. What is the criticality rating of 'ALU-ORDPROC-PROD-01' in terms of data sensitivity and business operations?
+1. Is process '2508' visible in standard Linux process listings (/proc)?
+2. What is the parent process of '2508'?
+3. What capabilities does '2508' possess?
+4. Can you retrieve the full command line of '2508' from memory dumps?
+5. Have any recent kernel updates been applied to 'ALU-ORDPROC-PROD-01'?
+6. Is 'ALU-ORDPROC-PROD-01' running outdated software versions susceptible to rootkits?
+7. Are there any unusual files or directories created under '/root/' or '/etc/' recently?
+8. Does 'ALU-ORDPROC-PROD-01' exhibit any anomalous network traffic patterns?
+9. Are there any additional alerts or logs indicating further compromise attempts on 'ALU-ORDPROC-PROD-01'?
