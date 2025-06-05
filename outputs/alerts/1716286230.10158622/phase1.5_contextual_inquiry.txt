@@ -2,15 +2,15 @@
 --- Associated Agent ID: ALU-001 ---
 
 **Initial Alert Assessment and Dimensional Focus:
-This alert signals a possible Network Denial of Service (NDS) attack (MITRE T1498) targeting 'ALU-WEB-PROD-01' via excessive HTTP POST requests to '/cart/add'. NDS aims to overwhelm resources. Key Cybersecurity Dimensions include: Network Behavior (POST traffic patterns), IOC in Threat Intel (source IP reputation), and Contextual Dimension (web app load and response times).**
+**This alert, identified by MITRE Technique T1498 (Network Denial of Service), suggests a potential DDoS-like attack on 'ALU-WEB-PROD-01' from Source IP '198.51.100.25'. T1498 often involves high-volume POST requests. Key Cybersecurity Dimensions include: Network Behavior (POST traffic patterns), IOC in Threat Intel (source IP reputation), and Contextual Dimension (web application load and URL path).
 
 **Critical Investigative Questions (Guided by MITRE Technique T1498 and Provided IOCs):
-1. How many POST requests did the source IP '198.51.100.25' send to '/cart/add'?
-2. What was the average rate of these POST requests per second?
-3. Did the source IP '198.51.100.25' receive any HTTP status codes other than 200?
-4. Were any other URLs on 'ALU-WEB-PROD-01' targeted by the same source IP?
-5. Is the source IP '198.51.100.25' listed in any threat intelligence feeds for DDoS activity?
-6. What is the typical baseline traffic for '/cart/add' on 'ALU-WEB-PROD-01'?
-7. Did the POST requests trigger any alerts in WAF or IDS systems?
-8. Are there signs of resource exhaustion or degraded performance on 'ALU-WEB-PROD-01'?
-9. Have similar patterns been observed from other source IPs targeting this URL?**
+1. How many POST requests did '198.51.100.25' send to 'ALU-WEB-PROD-01'?
+2. What was the average rate of POST requests per second from '198.51.100.25'?
+3. Did 'ALU-WEB-PROD-01' respond with status code 200 for all POST requests?
+4. Were any other HTTP methods (GET, PUT, DELETE) observed from '198.51.100.25'?
+5. Does the URL path '/cart/add' indicate a legitimate shopping cart operation?
+6. Is 'ALU-WEB-PROD-01' configured to handle high volumes of POST requests without degradation?
+7. Have other hosts in the 'aluskort-prod' group experienced similar POST floods recently?
+8. Is '198.51.100.25' associated with any known botnet or malware infrastructure?
+9. Can we correlate the POST flood with any other anomalies in network or application logs?
