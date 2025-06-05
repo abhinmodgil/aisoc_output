@@ -18,9 +18,7 @@ WAZUH_ALERTS_FILE_PATH = "jan30_alerts.json"
 
   # YOUR WORKING PAT
 
-if not GH_TOKEN_FOR_REQUESTS or "YOUR_GITHUB_PAT" in GH_TOKEN_FOR_REQUESTS:  # Basic check
-    st.error("CRITICAL ERROR: GitHub PAT (GH_TOKEN_FOR_REQUESTS) is not set correctly. Please update it.")
-    st.stop()
+
 
 
 # --- GitHub Helper Functions ---
