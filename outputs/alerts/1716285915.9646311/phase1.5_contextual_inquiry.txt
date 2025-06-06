@@ -2,16 +2,15 @@
 --- Associated Agent ID: ALU-003 ---
 
 **Initial Alert Assessment and Dimensional Focus:**
-This alert, identified by MITRE Technique ID T1014 (Rootkit), indicates a possible kernel-level rootkit installation on 'ALU-ORDPROC-PROD-01'. Given the nature of T1014, key Cybersecurity Dimensions include: Process Behavior (to detect unusual processes), Host Vulnerability (kernel exploit assessment), User Attribution (potential compromised users), Network Behavior (any anomalous traffic), IOC in Threat Intel (known rootkits), and Contextual Dimension (criticality of the affected asset).
+This alert, identified as Rule ID 521 ('Possible kernel level rootkit'), suggests a potential rootkit installation on 'ALU-ORDPROC-PROD-01'. The MITRE Technique T1014 focuses on hiding processes, files, or network activity. Key Cybersecurity Dimensions include: Process Behavior (to assess the hidden process), Host Vulnerability (kernel integrity checks), User Attribution (if a user initiated the rootkit), and Contextual Dimension (criticality of the production server).
 
 **Critical Investigative Questions (Guided by MITRE Technique T1014 and Provided IOCs):**
-1. What specific process ('2508') is being hidden from '/proc'?
-2. How did the rootkit manage to install itself on 'ALU-ORDPROC-PROD-01'?
-3. Is there any indication of unauthorized user access preceding the rootkit installation?
-4. Have other hosts in the 'aluskort-prod' group shown similar anomalies?
-5. What kernel version is running on 'ALU-ORDPROC-PROD-01'?
-6. Are there any known CVEs affecting the kernel version that could facilitate rootkit installation?
-7. What additional processes or services are running under the 'root' UID on 'ALU-ORDPROC-PROD-01'?
-8. Can we retrieve a memory dump or snapshot of 'ALU-ORDPROC-PROD-01' to analyze for rootkit indicators?
-9. Are there any network connections originating from 'ALU-ORDPROC-PROD-01' that suggest C&C communication?
-10. Has the rootkit modified any system binaries or files that could affect recovery?
+1. What process is being hidden from /proc?
+2. How did the rootkit manage to hide itself from standard Linux monitoring tools?
+3. Is the hidden process running under a legitimate user context or as root?
+4. Does the host 'ALU-ORDPROC-PROD-01' have any known vulnerabilities that could allow kernel-level compromise?
+5. Have other hosts in the environment shown similar alerts indicating rootkits?
+6. What additional processes or services are running on 'ALU-ORDPROC-PROD-01'?
+7. Are there any indicators of lateral movement or further compromise after the rootkit installation?
+8. Can we retrieve a memory dump or forensic image of 'ALU-ORDPROC-PROD-01' to analyze the hidden process?
+9. Are there any security controls or endpoint protection solutions deployed that might detect or mitigate rootkits?
