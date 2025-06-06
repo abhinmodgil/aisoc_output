@@ -2,15 +2,15 @@
 --- Associated Agent ID: ALU-003 ---
 
 **Initial Alert Assessment and Dimensional Focus:**
-This alert, identified as Rule ID 521 ('Possible kernel level rootkit'), suggests a potential rootkit installation on 'ALU-ORDPROC-PROD-01'. The MITRE Technique T1014 focuses on hiding processes, files, or network activity. Key Cybersecurity Dimensions include: Process Behavior (to assess the hidden process), Host Vulnerability (kernel integrity checks), User Attribution (if a user initiated the rootkit), and Contextual Dimension (criticality of the production server).
+This alert, identified by MITRE Technique T1014 (Rootkit), detects a potentially compromised system ('ALU-ORDPROC-PROD-01') where a process ('2508') has been hidden from the standard Linux process listing (/proc). The key Cybersecurity Dimensions for initial investigation are: Process Behavior (to examine the hidden process), Host Vulnerability (assess kernel integrity), User Attribution (identify who ran the rootkit), and Contextual Dimension (understand the criticality of the affected system).
 
 **Critical Investigative Questions (Guided by MITRE Technique T1014 and Provided IOCs):**
-1. What process is being hidden from /proc?
-2. How did the rootkit manage to hide itself from standard Linux monitoring tools?
-3. Is the hidden process running under a legitimate user context or as root?
-4. Does the host 'ALU-ORDPROC-PROD-01' have any known vulnerabilities that could allow kernel-level compromise?
-5. Have other hosts in the environment shown similar alerts indicating rootkits?
-6. What additional processes or services are running on 'ALU-ORDPROC-PROD-01'?
-7. Are there any indicators of lateral movement or further compromise after the rootkit installation?
-8. Can we retrieve a memory dump or forensic image of 'ALU-ORDPROC-PROD-01' to analyze the hidden process?
-9. Are there any security controls or endpoint protection solutions deployed that might detect or mitigate rootkits?
+1. What is the full path and executable name of the hidden process '2508'?
+2. How did the rootkit manage to hide the process '2508' from /proc?
+3. What other processes or files have been altered or hidden by the rootkit?
+4. Can you retrieve the hidden process '2508' through alternative methods like ps aux or lsof?
+5. Is the agent hostname 'ALU-ORDPROC-PROD-01' running any outdated or vulnerable software?
+6. Have any unauthorized users or services recently accessed 'ALU-ORDPROC-PROD-01'?
+7. What logs or audit trails exist on 'ALU-ORDPROC-PROD-01' that might indicate when the rootkit was installed?
+8. Is there any evidence of lateral movement or additional compromise within the aluskort-prod group?
+9. Should we isolate 'ALU-ORDPROC-PROD-01' immediately while further investigation continues?
