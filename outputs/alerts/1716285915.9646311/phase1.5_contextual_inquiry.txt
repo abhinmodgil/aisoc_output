@@ -2,16 +2,15 @@
 --- Associated Agent ID: ALU-003 ---
 
 **Initial Alert Assessment and Dimensional Focus:**
-This alert, identified by MITRE Technique T1014 (Rootkit), suggests the presence of a rootkit on 'ALU-ORDPROC-PROD-01'. The key Cybersecurity Dimensions are: Process Behavior (to examine hidden processes), Host Vulnerability (assess OS version and patch status), User Attribution (identify the affected user/group), Network Behavior (monitor for unusual traffic patterns), IOC in Threat Intel (search for known rootkit signatures), and Contextual Dimension (understand the criticality of the affected asset).
+This alert, identified by MITRE Technique T1014 (Rootkit), detects a hidden process ('2508') on 'ALU-ORDPROC-PROD-01'. T1014 involves concealing malware within the operating system. Key Cybersecurity Dimensions include: Process Behavior (to analyze the hidden process), Host Vulnerability (potential OS exploit), User Attribution (process owner), and Contextual Dimension (criticality of the affected host).
 
 **Critical Investigative Questions (Guided by MITRE Technique T1014 and Provided IOCs):**
-1. What is the exact name and path of the hidden process '2508'?
-2. How long has the process '2508' been active on 'ALU-ORDPROC-PROD-01'?
-3. What other processes or services are running under the same user context as '2508'?
-4. Have any recent changes been made to the kernel or system binaries on 'ALU-ORDPROC-PROD-01'?
-5. Is the agent 'ALU-003' still reporting normally from 'ALU-ORDPROC-PROD-01'?
-6. What is the operating system version and patch level of 'ALU-ORDPROC-PROD-01'?
-7. Is the group 'aluskort-prod' associated with any sensitive or privileged functions?
-8. Are there any known vulnerabilities in the OS or applications running on 'ALU-ORDPROC-PROD-01' that could facilitate rootkit installation?
-9. Has 'ALU-ORDPROC-PROD-01' communicated with any external IP addresses recently?
-10. Can you retrieve the full rootcheck decoder output for further analysis?
+1. What is the full command line or executable path associated with PID '2508'?
+2. How long has PID '2508' been running on 'ALU-ORDPROC-PROD-01'?
+3. Can you retrieve the parent process of PID '2508' from the process tree?
+4. What other processes are currently active on 'ALU-ORDPROC-PROD-01'?
+5. Have any other hidden processes been detected on this host recently?
+6. Does the host 'ALU-ORDPROC-PROD-01' run outdated or vulnerable Linux kernels?
+7. Is there any indication of unauthorized user access or credential compromise on 'ALU-ORDPROC-PROD-01'?
+8. Are there any unusual network connections originating from 'ALU-ORDPROC-PROD-01' since the alert?
+9. Has the rootkit detector tool 'rootcheck' flagged any additional anomalies beyond the hidden process?
