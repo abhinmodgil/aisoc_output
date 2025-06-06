@@ -2,7 +2,7 @@
 --- Agent ID: ALU-003 ---
 
 --- Initial Assessment (from Contextual Inquiry) ---
-This alert, identified by MITRE Technique ID T1014 (Rootkit), indicates a possible kernel-level rootkit installation on 'ALU-ORDPROC-PROD-01'. Given the nature of T1014, key Cybersecurity Dimensions include: Process Behavior (to detect unusual processes), Host Vulnerability (kernel exploit assessment), User Attribution (potential compromised users), Network Behavior (any anomalous traffic), IOC in Threat Intel (known rootkits), and Contextual Dimension (criticality of the affected asset).
+This alert, identified as Rule ID 521 ('Possible kernel level rootkit'), suggests a potential rootkit installation on 'ALU-ORDPROC-PROD-01'. The MITRE Technique T1014 focuses on hiding processes, files, or network activity. Key Cybersecurity Dimensions include: Process Behavior (to assess the hidden process), Host Vulnerability (kernel integrity checks), User Attribution (if a user initiated the rootkit), and Contextual Dimension (criticality of the production server).
 
 --- Validated IOCs Used for Plan Generation ---
 {
@@ -12,446 +12,380 @@ This alert, identified by MITRE Technique ID T1014 (Rootkit), indicates a possib
   "Rule Description": "Possible kernel level rootkit",
   "MITRE Technique ID": "T1014 \u2013 Rootkit",
   "Agent ID": "ALU-003",
-  "Agent Name": "ALU-ORDPROC-PROD-01",
+  "Agent Hostname": "ALU-ORDPROC-PROD-01",
   "Agent IP": "10.60.5.25",
-  "Group": "aluskort-prod",
+  "Groups": "ossec, rootcheck",
   "Title": "Process '2508' hidden from /proc.",
+  "Location": "rootcheck",
   "Decoder": "rootcheck"
 }
 
 --- Detailed Investigative Questions and Plans ---
 
-Question 1: What specific process ('2508') is being hidden from '/proc'?
+Question 1: What process is being hidden from /proc?
 Detailed Plan:
 **Investigative Plan:**
-*   **Objective:** Identify which exact process (<PROCESS_ID>) is being hidden from standard Linux process listings (e.g., /proc) on host <AGENT_HOSTNAME>.
+*   Objective: Identify which process is being hidden from /proc on host ALU-ORDPROC-PROD-01.
+
+*   Key Data Sources/Tools (Prioritized):
+    1.  Linux Command Line (on ALU-ORDPROC-PROD-01): Use commands like ps and check /proc/ to verify process visibility.
+    2.  Velociraptor (on ALU-ORDPROC-PROD-01): Query endpoint to check process status and compare with /proc listings.
+    3.  Wazuh API (for Agent ID ALU-003): Search logs for related events (e.g., rootcheck alerts, suspicious processes).
+
+*   Steps & Example Commands/Queries:
+    1.  Linux CLI (on ALU-ORDPROC-PROD-01, requires direct access or EDR execution):
+        * Attempt to list the process: ps aux | grep <PROCESS_ID>
+        * Check its /proc entry: ls -ld /proc/<PROCESS_ID>; cat /proc/<PROCESS_ID>/status
+        (Note: If hidden, these commands might yield no output or errors for the specific PID.)
+
+    2.  Velociraptor (Target Hostname: ALU-ORDPROC-PROD-01 or Agent ID: ALU-003):
+        * Query to list processes using standard artifact:
+        * Query to check for discrepancies or signs of hiding (advanced):
+
+    3.  Wazuh API (Target Agent ID: ALU-003):
+        * Query for rootcheck or suspicious process related alerts:
+        * Generic log search for the PID on the agent:
+
+
+*   Expected Outcome/Interpretation:
+    - ✅ If process <PROCESS_ID> appears normally in ps and /proc/<PROCESS_ID> exists and is readable, it might be a false positive from the detection rule, or the hiding is intermittent/sophisticated.
+    - ❌ If ps doesn't show <PROCESS_ID> but other tools (like EDR kernel-level listings if available via Velociraptor) do, or if /proc/<PROCESS_ID> is missing/inaccessible while the process is known to be running, it strongly indicates hiding.
+--------------------------------------------------
+
+Question 2: How did the rootkit manage to hide itself from standard Linux monitoring tools?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Identify methods/processes used by the rootkit to evade detection and remain hidden from standard Linux monitoring tools.
 
 *   **Key Data Sources/Tools (Prioritized):**
-    1.  **Linux Command Line (on <AGENT_HOSTNAME>):** Use commands like `ps` and check `/proc/` to verify process visibility.
-    2.  **Velociraptor (on <AGENT_HOSTNAME>):** Query endpoint to check process status and compare with /proc listings.
-    3.  **Wazuh API (for Agent ID <AGENT_ID>):** Search logs for related events (e.g., rootcheck alerts, suspicious processes).
+    1.  **Velociraptor (on <AGENT_HOSTNAME>):** Query endpoint to check process status and compare with /proc listings.
+    2.  **Linux Command Line (on <AGENT_HOSTNAME>):** Use commands like `strace` and check `/sys/kernel/debug/tracing` to analyze system calls and detect evasion techniques.
+    3.  **Wazuh API (for Agent ID <AGENT_ID>):** Search logs for related events (e.g., rootcheck alerts, suspicious processes) and correlate them with timestamps around the initial detection.
 
 *   **Steps & Example Commands/Queries:**
-    1.  **Linux CLI (on <AGENT_HOSTNAME>, requires direct access or EDR execution):**
-        * Attempt to list the process: `ps aux | grep <PROCESS_ID>`
-        * Check its /proc entry: `ls -ld /proc/<PROCESS_ID>; cat /proc/<PROCESS_ID>/status`
-        (Note: If hidden, these commands might yield no output or errors for the specific PID)
-
-    2.  **Velociraptor (Target Hostname: <AGENT_HOSTNAME> or Agent ID: <AGENT_ID>):**
+    1.  **Velociraptor (Target Hostname: <AGENT_HOSTNAME> or Agent ID: <AGENT_ID>):**
         * Query to list processes using standard artifact:
             ```sql
             SELECT * FROM Artifact.Linux.System.Pslist() WHERE Pid == <PROCESS_ID>
             ```
-        * Query to check for discrepancies or signs of hiding (advanced):
+        * Advanced query to check for discrepancies or signs of hiding:
             ```sql
-            // More complex VQL might be needed to compare different process listing mechanisms
+            SELECT * FROM Artifact.Linux.System.Pslist() WHERE Pid!= <PROCESS_ID> AND Hidden == true;
+            ```
+        * Query to check for unusual syscalls or modifications to /proc:
+            ```sql
+            SELECT * FROM Artifact.Linux.SyscallTracer() WHERE Syscall == "hide_process";
             ```
 
+    2.  **Linux CLI (on <AGENT_HOSTNAME>):**
+        * Attempt to list the process:
+            ```bash
+            ps aux | grep <PROCESS_ID>
+            ls -ld /proc/<PROCESS_ID>
+            cat /proc/<PROCESS_ID>/status
+            ```
+        * Check for signs of tampering or evasion:
+            ```bash
+            strace -p <PROCESS_ID> -f -o /tmp/strace.out # Monitor process for suspicious syscalls
+            ```
+        * Analyze system call traces for evasion attempts:
+            ```bash
+            less /tmp/strace.out | grep "hide_process" # Look for specific syscall names
+            ```
+
+    3.  **Wazuh API (Target Agent ID: <AGENT_ID>):**
         * Query for rootcheck or suspicious process related alerts:
             ```http
             ```
         * Generic log search for the PID on the agent:
             ```http
+            GET /agents/<AGENT_ID>/logs/summary?q=<PROCESS_ID>
+            ```
+        * Correlate with previous alerts or logs around the same time frame:
+            ```http
+            GET /agents/<AGENT_ID>/logs/summary?q="<PROCESS_ID>" AND timestamp > 2024-05-21T10:00:00
             ```
 
-
 *   **Expected Outcome/Interpretation:**
-    - ✅ If process <PROCESS_ID> appears normally in `ps` and `/proc/<PROCESS_ID>` exists and is readable, it might be a false positive from the detection rule, or the hiding is intermittent/sophisticated.
-    - ❌ If `ps` doesn't show <PROCESS_ID> but other tools (like EDR kernel-level listings if available via Velociraptor) do, or if `/proc/<PROCESS_ID>` is missing/inaccessible while the process is known to be running, it strongly indicates hiding.
+    - ✅ If the rootkit's evasion method is detected through Velociraptor or Linux CLI analysis, it provides insights into its capabilities and potential remediation steps.
+    - ❌ If no evasion technique is found, consider alternative explanations such as misconfiguration, incomplete detection rules, or advanced obfuscation techniques.
 --------------------------------------------------
 
-Question 2: How did the rootkit manage to install itself on 'ALU-ORDPROC-PROD-01'?
+Question 3: Is the hidden process running under a legitimate user context or as root?
 Detailed Plan:
-**Investigative Plan:*** Objective: Identify how the rootkit was installed on host <AGENT_HOSTNAME>.
+**Investigative Plan:*** Objective: Determine whether the hidden process (<PROCESS_ID>) is running under a normal user account or with elevated privileges (root).
+
 * Key Data Sources/Tools (Prioritized):
-    1.  **Organizational Asset Inventory:** Look up <AGENT_HOSTNAME> in asset management system for recent changes, deployments, or updates.
-    2.  **Velociraptor (Target Hostname: <AGENT_HOSTNAME>):** Query endpoint to check for traces of installation scripts, cron jobs, or unusual artifacts.
-    3.  **Wazuh API (for Agent ID <AGENT_ID>):** Search logs for related events (e.g., unauthorized package installations, cronjob creations, unexpected service starts).
+    1. Velociraptor (Target Hostname: <AGENT_HOSTNAME> or Agent ID: <AGENT_ID>):
+        * Query to retrieve process details including user context:
+            ```sql
+            SELECT * FROM Artifact.Linux.System.Pslist() WHERE Pid == <PROCESS_ID>
+            ```
+        * Advanced option: Compare process listing methods (e.g., ps vs procfs) to detect inconsistencies.
+
+    2. Wazuh API (Target Agent ID: <AGENT_ID>):
+        * Search for process-related alerts mentioning the hidden process:
+            ```http
+            ```
+        * Look for additional context such as parent process, network connections, or file system operations.
 
 * Steps & Example Commands/Queries:
-    1.  **Asset Inventory Lookup (via Web Portal or API):**
-        * Query asset inventory for <AGENT_HOSTNAME>:
-            `SELECT * FROM assets WHERE hostname = '<AGENT_HOSTNAME>' ORDER BY timestamp DESC LIMIT 30;`
-        * Look for recent additions, software updates, or scheduled tasks around the time of the alert.
+    1. Velociraptor (Target Hostname: <AGENT_HOSTNAME> or Agent ID: <AGENT_ID>):
+        * Run the above query to get process details.
+        * Inspect the returned results for the User field.
+        * If the process is running under a non-root user, proceed to next steps; otherwise, escalate immediately.
 
-    2.  **Velociraptor (Target Hostname: <AGENT_HOSTNAME>):**
-        * Query to check for cron jobs, startup scripts, or unusual services:
-            ```sql
-            SELECT * FROM Artifact.Linux.CronJobs() WHERE Hostname = '<AGENT_HOSTNAME>'
-            SELECT * FROM Artifact.Linux.StartupScripts() WHERE Hostname = '<AGENT_HOSTNAME>'
-            SELECT * FROM Artifact.Linux.Services() WHERE Hostname = '<AGENT_HOSTNAME>'
-            ```
-        * Advanced: Query for recently modified files under `/var/lib/dpkg/info/*` or `/usr/share/doc/*/DEBIAN/postinst`.
-
-    3.  **Wazuh API (Target Agent ID: <AGENT_ID>):**
-        * Query for unauthorized package installations:
+    2. Wazuh API (Target Agent ID: <AGENT_ID>):
+        * Query for process execution logs:
             ```http
-            GET /agents/<AGENT_ID>/logs/summary?q=rule.description:unauthorized_package_installation AND data.package_name:*
             ```
-        * Query for cronjob creation events:
-            ```http
-            GET /agents/<AGENT_ID>/logs/summary?q=rule.description:cronjob_created AND data.cronjob_content:*
-            ```
-        * Query for unexpected service start events:
-            ```http
-            GET /agents/<AGENT_ID>/logs/summary?q=rule.description:unexpected_service_start AND data.service_name:*
-            ```
+        * Review the response for any unusual parent processes or command line arguments.
 
 * Expected Outcome/Interpretation:
-    - ✅ If recent changes align with known deployment schedules or legitimate activities, consider it a false positive.
-    - ❌ If new cronjobs, startup scripts, or packages were installed shortly before the alert, investigate further.
-    - ❌ If no obvious installation method is found, consider lateral movement or compromised credentials.
+    - ✅ If the process is running under a regular user account without elevated privileges, continue investigating based on other findings.
+    - ❌ If the process is running as root or another privileged user, escalate immediately as it could indicate unauthorized privilege escalation.
 --------------------------------------------------
 
-Question 3: Is there any indication of unauthorized user access preceding the rootkit installation?
+Question 4: Does the host 'ALU-ORDPROC-PROD-01' have any known vulnerabilities that could allow kernel-level compromise?
 Detailed Plan:
-**Investigative Plan:**
-*   **Objective:** Identify any prior unusual login attempts or failed authentications around the time of the rootkit installation.
+**Investigative Plan:***   **Objective:** Identify known vulnerabilities in the operating system and software stack of host <AGENT_HOSTNAME>.
 
 *   **Key Data Sources/Tools (Prioritized):**
-    1.  **Wazuh API (for Agent ID <AGENT_ID>):** Search logs for authentication failures or anomalies before the rootkit alert.
-    2.  **Organizational Data Lookup:** Check user access records or recent changes in permissions for users on the affected host.
-    3.  **Velociraptor (on <AGENT_HOSTNAME>):** Query for recent login history, especially those involving the same user or unusual locations.
+    1.  **CVE Database Lookup:** Search for CVEs affecting the specific OS version and installed packages on <AGENT_HOSTNAME>.
+    2.  **Asset Inventory Database:** Look up <AGENT_HOSTNAME> in organizational asset management to retrieve its OS type/version and patch history.
+    3.  **Nessus Scanner (if available):** Run a vulnerability scan against <AGENT_HOSTNAME> to detect active exploits.
 
 *   **Steps & Example Commands/Queries:**
-    1.  **Wazuh API (Endpoint: /agents/<AGENT_ID>/logs/summary):**
-        * Query for authentication-related events before the rootkit alert timestamp:
-        ```http
-        GET /agents/<AGENT_ID>/logs/summary?q=rule.description:authentication_failure OR rule.description:failed_login AND timestamp:[<ROOTKIT_TIMESTAMP>-30m TO <ROOTKIT_TIMESTAMP>+30m]
-        ```
-        * Look for repeated failed logins from unexpected locations or usernames.
+    1.  **CVE Database Lookup (e.g., NVD API):**
+        * Query endpoint: `GET /vuln/?cpe_name=cpe:/o:linux:`<OS_VERSION>`&product=<PACKAGE_NAME>&version=<VERSION>`
+        * Example query for Ubuntu 20.04 LTS: `GET /vuln/?cpe_name=cpe:/o:linux:ubuntu_linux:20.04_lts`
+        * Example query for Apache HTTP Server: `GET /vuln/?cpe_name=cpe:/a:apache:http_server:&version=<HTTP_SERVER_VERSION>`
 
-    2.  **Organizational Data Lookup (e.g., HR system or Access Management DB):**
-        * Query for recent changes in user permissions or roles for the affected host:
-        ```sql
-        SELECT * FROM user_changes WHERE host = '<AGENT_HOSTNAME>' AND timestamp >= '<ROOTKIT_TIMESTAMP>-30m';
-        ```
-        * Check for any new accounts created or permissions escalated around the time of the rootkit alert.
+    2.  **Asset Inventory Lookup (e.g., Structured File or DB):**
+        * Query endpoint: `GET /assets/<AGENT_HOSTNAME>`
+        * Example query for asset lookup: `SELECT * FROM assets WHERE hostname = '<AGENT_HOSTNAME>'`
 
-    3.  **Velociraptor (Target Hostname: <AGENT_HOSTNAME>):**
-        * Query for recent login history for the affected user (<USERNAME>) or similar anomalous logins:
-        ```sql
-        SELECT * FROM Artifact.Linux.System.LoginHistory(Hostname='<AGENT_HOSTNAME>') WHERE Username LIKE '%<USERNAME>%';
-        ```
-        * Look for multiple failed logins followed by successful ones, or logins from unfamiliar locations.
+    3.  **Nessus Vulnerability Scan (if available):**
+        * Execute Nessus scan: `./nessus_scan.sh <AGENT_HOSTNAME>`
+        * Review results: `cat nessus_results.xml | grep -i "critical|high"`
 
 *   **Expected Outcome/Interpretation:**
-    - ✅ If prior authentication failures or permission changes are detected near the rootkit alert, it suggests a possible compromise path.
-    - ❌ If no such anomalies are found, focus on other aspects of the investigation.
+    - ✅ If recent patches are applied, and no high-severity CVEs are found, it suggests minimal risk.
+    - ❌ If outdated software versions are detected, especially with known exploits, escalate for immediate remediation.
 --------------------------------------------------
 
-Question 4: Have other hosts in the 'aluskort-prod' group shown similar anomalies?
+Question 5: Have other hosts in the environment shown similar alerts indicating rootkits?
 Detailed Plan:
 **Investigative Plan:**
-*   **Objective:** Identify if other hosts in the same organizational group ('aluskort-prod') have exhibited similar rootkit-related behaviors.
+*   **Objective:** Identify if other hosts in the organization have also triggered similar rootkit-related alerts.
 
 *   **Key Data Sources/Tools (Prioritized):**
-    1.  **Wazuh API (for Group 'aluskort-prod'):** Query for alerts matching the same rule description (e.g., Rule ID 521) across multiple agents.
-    2.  **Velociraptor (across Agents in 'aluskort-prod' Group):** Run a distributed query to detect similar rootkit-like behaviors across multiple hosts.
-    3.  **Centralized Log Aggregation (ELK Stack, Splunk, etc.):** Search for correlated alerts or logs across multiple hosts indicating similar rootkit activities.
+    1.  **SIEM (e.g., Wazuh API):** Query for rootkit alerts across multiple agents.
+    2.  **EDR (e.g., Velociraptor):** Query for rootkit detections across endpoints.
+    3.  **Threat Intelligence Platform (TIP):** Look up recent alerts mentioning rootkits.
 
 *   **Steps & Example Commands/Queries:**
-    1.  **Wazuh API (for Group 'aluskort-prod', Target Group ID: 'aluskort-prod'):**
-        * Query for alerts matching the same rule description (e.g., Rule ID 521) across multiple agents:
+    1.  **Wazuh API (Target Agents IDs: <LIST_OF_AGENT_IDS>):**
+        * Query for rootkit alerts across multiple agents:
         ```http
-        GET /groups/aluskort-prod/alerts?q=rule.description:Possible%20kernel%20level%20rootkit
+        GET /agents/<AGENT_ID_1>/<AGENT_ID_N>/logs/summary?q=rule.groups:rootcheck
         ```
-        * Note: This assumes Wazuh's grouping mechanism is based on agent IDs or hostnames, adjust accordingly if using custom fields.
+        (Replace <AGENT_ID_1> and <AGENT_ID_N> with actual agent IDs from the environment.)
 
-    2.  **Velociraptor (across Agents in 'aluskort-prod' Group, Target Group ID: 'aluskort-prod'):**
-        * Query to detect similar rootkit-like behaviors across multiple hosts:
+    2.  **Velociraptor (Target Hostnames: <LIST_OF_HOSTNAMES> or Agent IDs: <LIST_OF_AGENT_IDS>):**
+        * Query for rootkit detections across endpoints:
         ```sql
-        SELECT * FROM Artifact.Linux.System.Pslist() WHERE Pid == <PROCESS_ID> AND Hostname IN (SELECT DISTINCT Hostname FROM AgentMetadata WHERE GroupName='aluskort-prod');
+        SELECT * FROM Artifact.Linux.RootkitDetection(Hostnames=['<HOSTNAME_1>', '<HOSTNAME_N>'])
         ```
-        * Adjust the query to include additional rootkit-related artifacts or behaviors.
+        (Replace <HOSTNAME_1> and <HOSTNAME_N> with actual hostnames from the environment.)
 
-    3.  **Centralized Log Aggregation (ELK Stack, Splunk, etc.):**
-        * Search for correlated alerts or logs across multiple hosts indicating similar rootkit activities:
-        ```kibana-query
-        {
-            "query": "(event.action:alert AND event.module:wazuh AND event.dataset:file_integrity AND message:\"Possible kernel level rootkit\") OR (event.action:alert AND event.module:wazuh AND event.dataset:file_integrity AND message:\"Suspicious process hiding\")",
-            "filter": [
-                {
-                    "term": {
-                        "host.hostname.keyword": "ALU-*"
-                    }
-                },
-                {
-                    "terms": {
-                        "tags.keyword": ["wazuh"]
-                    }
-                }
-            ]
-        }
+    3.  **TIP (e.g., MISP):**
+        * Search for recent alerts mentioning rootkits:
+        ```http
+        GET /alerts?q=rootkit
         ```
-        * Replace `"ALU-*"` with the appropriate wildcard pattern for your environment.
+        (Adjust the query based on the TIP's syntax and available fields.)
 
 *   **Expected Outcome/Interpretation:**
-    - ✅ If other hosts in the 'aluskort-prod' group also exhibit similar rootkit-related alerts or behaviors, it suggests a broader issue affecting multiple machines.
-    - ❌ If only one host shows the anomaly, it could indicate isolated compromise or misconfiguration.
+    - ✅ If other hosts in the environment have triggered similar rootkit alerts, it suggests widespread presence of rootkits.
+    - ❌ If only one host has reported such an alert, it could indicate isolated compromise or misconfiguration.
 --------------------------------------------------
 
-Question 5: What kernel version is running on 'ALU-ORDPROC-PROD-01'?
-Detailed Plan:
-**Investigative Plan:***   Objective: Identify the exact kernel version running on host <AGENT_HOSTNAME>. This will help determine if the observed behavior aligns with expected kernel operations or could indicate a rootkit attempting to hide itself.
-
-*   Key Data Sources/Tools (Prioritized):
-    1.  **Linux Command Line (on <AGENT_HOSTNAME>):** Execute commands to retrieve kernel version information.
-    2.  **Velociraptor (on <AGENT_HOSTNAME>):** Query endpoint to gather system information including kernel version.
-    3.  **Wazuh API (for Agent ID <AGENT_ID>):** Search logs for related events (e.g., rootcheck alerts, system info reports).
-
-*   Steps & Example Commands/Queries:
-    1.  **Linux CLI (on <AGENT_HOSTNAME>, requires direct access or EDR execution):**
-        * List currently running kernels: `cat /proc/version`
-        * Check kernel version history: `cat /var/log/dpkg.log | grep linux-image`
-        * Compare against known good versions: `diff /proc/version /etc/debian_version`
-
-    2.  **Velociraptor (Target Hostname: <AGENT_HOSTNAME> or Agent ID: <AGENT_ID>):**
-        * Query to list system info including kernel version:
-          ```sql
-          SELECT * FROM Artifact.Linux.System.Info()
-          ```
-        * Advanced: Query for kernel modules loaded at the time of the alert:
-          ```sql
-          SELECT * FROM Artifact.Linux.KernelModules() WHERE TimeGenerated > '2024-05-21T10:00:00'
-          ```
-
-    3.  **Wazuh API (Target Agent ID: <AGENT_ID>):**
-        * Query for rootcheck or system info related alerts:
-          ```http
-          GET /agents/<AGENT_ID>/logs/summary?q=rule.groups:rootcheck OR rule.groups:system_info AND (data.kernel.version:* OR "kernel version")
-          ```
-        * Generic log search for kernel-related events:
-          ```http
-          GET /agents/<AGENT_ID>/logs/summary?q=kernel
-          ```
-
-*   Expected Outcome/Interpretation:
-    - ✅ If the retrieved kernel version matches the expected one for the operating system and release, it likely indicates a benign situation.
-    - ❌ If the kernel version is outdated, mismatching, or shows unusual modifications (e.g., unexpected patches applied), it raises suspicion of tampering or compromise.
---------------------------------------------------
-
-Question 6: Are there any known CVEs affecting the kernel version that could facilitate rootkit installation?
-Detailed Plan:
-**Investigative Plan:***   Objective: Identify any known vulnerabilities in the kernel version (<KERNEL_VERSION>) that could allow rootkits or similar malware to operate undetected.
-
-*   Key Data Sources/Tools (Prioritized):
-    1.  **CVE Databases (NVD, Red Hat CVE Database, etc.):** Search for CVEs affecting the exact kernel version (<KERNEL_VERSION>).
-    2.  **OSINT Tools (Censys, Shodan, ZoomEye):** Look for publicly exposed hosts with same kernel version (<KERNEL_VERSION>) to assess exposure.
-    3.  **Internal Vulnerability Management Systems (VMDB):** Check if organization's VMDB tracks any known issues for <KERNEL_VERSION>.
-
-*   Steps & Example Commands/Queries:
-    1.  **NVD/CVE Search (Online NVD API or Website):**
-        * Query: Search for CVEs affecting the exact kernel version (<KERNEL_VERSION>):
-            `cve-search --version <KERNEL_VERSION>`
-        * Expected Output: List of matching CVE IDs with severity scores.
-    2.  **Shodan/Censys/ZoomEye Search (Public Internet Scanning):**
-        * Query: Search for publicly accessible hosts running the exact kernel version (<KERNEL_VERSION>):
-            `shodan search 'os:"<KERNEL_VERSION>"'`
-            `censys search'services.os.type:"<KERNEL_VERSION>"'`
-            `zoomeye search "kernel_version:<KERNEL_VERSION>"`
-        * Expected Output: List of IP addresses exposing the vulnerable kernel version.
-    3.  **Internal VMDB Query (if available):**
-        * Query: Search for vulnerability records mentioning <KERNEL_VERSION>:
-            `SELECT * FROM vmdb.vulnerabilities WHERE affected_os LIKE '%<KERNEL_VERSION>%';`
-        * Expected Output: List of internal vulnerability records matching the kernel version.
-
-*   Expected Outcome/Interpretation:
-    - ✅ If multiple high-severity CVEs exist for <KERNEL_VERSION>, especially those allowing local privilege escalation or bypassing security checks, it suggests increased risk.
-    - ❌ If only low-risk or informational CVEs are found, or none at all, it reduces immediate concern but does not eliminate the possibility of unknown exploits.
---------------------------------------------------
-
-Question 7: What additional processes or services are running under the 'root' UID on 'ALU-ORDPROC-PROD-01'?
+Question 6: What additional processes or services are running on 'ALU-ORDPROC-PROD-01'?
 Detailed Plan:
 **Investigative Plan:**
-*   **Objective:** Identify all active processes/services running under the 'root' UID on host <AGENT_HOSTNAME>.
+*   **Objective:** Identify all active processes and services on host <AGENT_HOSTNAME>.
 
 *   **Key Data Sources/Tools (Prioritized):**
-    1.  **Linux Command Line (on <AGENT_HOSTNAME>):** Execute commands to enumerate processes owned by UID 0.
-    2.  **Velociraptor (on <AGENT_HOSTNAME>):** Run VQL queries to gather process information.
+    1.  **Linux Command Line (on <AGENT_HOSTNAME>):** Use commands like `ps`, `top`, `lsof`, `netstat`, `ss`, `pgrep`.
+    2.  **Velociraptor (on <AGENT_HOSTNAME>):** Query endpoints to enumerate processes and network connections.
     3.  **Wazuh API (for Agent ID <AGENT_ID>):** Search logs for related events (e.g., rootcheck alerts, suspicious processes).
 
 *   **Steps & Example Commands/Queries:**
     1.  **Linux CLI (on <AGENT_HOSTNAME>, requires direct access or EDR execution):**
-        * List all processes owned by UID 0: `ps aux | awk '$3 == "root"'`
-        * Check for unusual processes/services: `grep -E '^root\s.*' /var/log/auth.log`
-        * Look for unexpected binaries: `find /usr/bin /usr/sbin /sbin /opt -user root -type f`
+        * List all running processes: `ps aux; top -n 1`
+        * List open files: `lsof -p <PID>`
+        * List listening ports: `netstat -tulpn` or `ss -tulnp`
+        * Find processes matching specific criteria: `pgrep <pattern>`
 
     2.  **Velociraptor (Target Hostname: <AGENT_HOSTNAME> or Agent ID: <AGENT_ID>):**
-        * Query to list processes owned by UID 0:
-          ```sql
-          SELECT * FROM Artifact.Linux.System.Pslist() WHERE Uid == 0;
-          ```
-        * Advanced query to check for unusual process names or paths:
-          ```sql
-          SELECT * FROM Artifact.Linux.System.Pslist() WHERE Uid == 0 AND Path LIKE '/tmp/%';
-          ```
-
-        * Query for rootcheck alerts specifically mentioning UID 0:
-          ```http
-          ```
-        * Generic log search for processes owned by UID 0:
-          ```http
-          GET /agents/<AGENT_ID>/logs/summary?q=data.process.uid:0
-          ```
-
-*   **Expected Outcome/Interpretation:**
-    - ✅ If only expected system daemons/processes are found under UID 0, it's likely benign.
-    - ❌ If unknown or suspicious processes/services are discovered, escalate for further analysis.
---------------------------------------------------
-
-Question 8: Can we retrieve a memory dump or snapshot of 'ALU-ORDPROC-PROD-01' to analyze for rootkit indicators?
-Detailed Plan:
-**Investigative Plan:**
-*   **Objective:** Capture volatile memory from host <AGENT_HOSTNAME> to inspect for rootkits or malicious code.
-
-*   **Key Data Sources/Tools (Prioritized):**
-    1.  **Velociraptor (on <AGENT_HOSTNAME>):** Collect live memory snapshot using VQL artifacts.
-    2.  **Linux CLI (on <AGENT_HOSTNAME>):** Run manual memory capture commands.
-    3.  **Wazuh API (for Agent ID <AGENT_ID>):** Search for previous memory analysis results or related alerts.
-
-*   **Steps & Example Commands/Queries:**
-    1.  **Velociraptor (Target Hostname: <AGENT_HOSTNAME> or Agent ID: <AGENT_ID>):**
-        * Create a new case in Velociraptor:
-          `POST /api/cases/new`
-          {
-            "case_name": "Memory Analysis for <AGENT_HOSTNAME>",
-            "description": "Collect memory dump for rootkit analysis.",
-            "tags": ["memory_dump", "rootkit_analysis"]
-          }
-        * Execute memory collection artifact:
-          ```sql
-          SELECT * FROM Artifact.Linux.Memdump(Hostname='<AGENT_HOSTNAME>')
-          ```
-        * Optionally run advanced rootkit hunting VQL:
-          ```sql
-          SELECT * FROM Artifact.Linux.RootkitHunt(Hostname='<AGENT_HOSTNAME>')
-          ```
-
-    2.  **Linux CLI (on <AGENT_HOSTNAME>):**
-        * Manually create a memory dump:
-          `dd if=/dev/mem bs=1M count=512 | gzip > /tmp/memory.gz`
-        * Extract strings from memory:
-          `strings /tmp/memory.gz | less`
-        * Inspect loaded modules:
-          `cat /proc/modules | grep -i rootkit`
+        * Query to list all processes: `SELECT * FROM Artifact.Linux.System.Pslist()`
+        * Query to list network listeners: `SELECT * FROM Artifact.Network.Listeners()`
+        * Advanced query to correlate processes with open sockets: `SELECT pid, comm, fd_name FROM Artifact.Process.FdInfo() JOIN Artifact.Network.Sockets() ON fd_inode = socket_path`
 
     3.  **Wazuh API (Target Agent ID: <AGENT_ID>):**
-        * Search for prior memory dumps or rootkit-related alerts:
-          `GET /agents/<AGENT_ID>/cases?q=rootkit OR memory OR volatility`
-        * Look for successful memory captures or failed attempts:
-          `GET /agents/<AGENT_ID>/tasks?q=volatility OR memdump`
+        * Search for rootcheck alerts mentioning processes:
+          `GET /agents/<AGENT_ID>/logs/summary?q=rule.groups:rootcheck AND data.process.pname:*`
+        * Search for suspicious process alerts:
+          `GET /agents/<AGENT_ID>/logs/summary?q=rule.groups:malware AND data.process.pname:*`
 
 *   **Expected Outcome/Interpretation:**
-    - ✅ If Velociraptor collects a valid memory dump and finds no obvious rootkit indicators, proceed with deeper static/dynamic analysis.
-    - ❌ If Velociraptor fails due to insufficient permissions or the rootkit hides itself during collection, consider escalating privileges or using alternative methods (e.g., physical memory extraction via USB drive).
-    - ❌ If the Linux CLI commands fail due to lack of required permissions, escalate to privileged mode or use Velociraptor instead.
+    - ✅ If the process list includes many legitimate system daemons and services, it's likely benign.
+    - ❌ If only a few processes are seen, especially non-standard ones, it could indicate a minimal footprint malware or compromised service.
 --------------------------------------------------
 
-Question 9: Are there any network connections originating from 'ALU-ORDPROC-PROD-01' that suggest C&C communication?
-Detailed Plan:
-**Investigative Plan:***   Objective: Identify and analyze network traffic from host <AGENT_HOSTNAME> (Agent ID: <AGENT_ID>) that could indicate C&C communication.
-
-*   Key Data Sources/Tools (Prioritized):
-    1.  **Network Traffic Analysis Tools:** Wireshark, Zeek, Suricata, Network Miner, etc.
-    2.  **Firewall Logs:** Check for outbound connections from <AGENT_HOSTNAME>.
-    3.  **DNS Logs:** Look for DNS requests to suspicious domains.
-    4.  **Endpoint Detection and Response (EDR):** Review EDR logs for unusual network activities.
-
-*   Steps & Example Commands/Queries:
-    1.  **Capture Network Traffic on <AGENT_HOSTNAME>:**
-        * Use tcpdump to capture live traffic:
-            ```bash
-            # Capture only TCP traffic on port 80 (HTTP)
-            tcpdump -i eth0 -w /tmp/http_traffic.pcap 'tcp port 80'
-            ```
-        * Alternatively, use built-in packet capturing tools like `netstat -anp` or `ss -ntlp`.
-
-    2.  **Analyze Captured Traffic:**
-        * Open captured pcap file in Wireshark:
-            ```bash
-            wireshark /tmp/http_traffic.pcap
-            ```
-        * Filter for TCP traffic to/from <AGENT_HOSTNAME>:
-            ```wireshark
-            ip.addr == <AGENT_IP> && tcp.port == 443
-            ```
-        * Look for unusual destination ports, large data transfers, or encrypted traffic.
-
-    3.  **Review Firewall Logs:**
-        * Access firewall logs through centralized management console:
-            ```bash
-            curl -u admin:password 
-            ```
-        * Search for outbound connections initiated by <AGENT_HOSTNAME>:
-            ```bash
-            curl -u admin:password 
-            ```
-
-    4.  **Check DNS Logs:**
-        * Extract DNS logs from Syslog:
-            ```bash
-            journalctl _COMM=dns -f
-            ```
-        * Search for DNS queries to suspicious domains:
-            ```bash
-            journalctl _COMM=dns | grep -E '(bad-domain.com|evil-site.net)'
-            ```
-
-    5.  **EDR Log Analysis:**
-        * Connect to EDR console:
-            ```bash
-            sshjohn.doe@example.com           ```
-        * Run query to retrieve network-related events:
-            ```bash
-           ./velociraptor-cli.exe query 'SELECT * FROM Artifact.NetworkConnections()'
-            ```
-
-*   Expected Outcome/Interpretation:
-    - ✅ If Wireshark shows HTTP/S traffic to known C&C servers or suspicious destinations, it's likely a C&C connection.
-    - ❌ If no such traffic is observed, focus on analyzing DNS logs and firewall logs for potential exfiltration attempts.
---------------------------------------------------
-
-Question 10: Has the rootkit modified any system binaries or files that could affect recovery?
+Question 7: Are there any indicators of lateral movement or further compromise after the rootkit installation?
 Detailed Plan:
 **Investigative Plan:**
-*   **Objective:** Identify which system binaries or files have been altered by the rootkit, focusing on those crucial for recovery operations.
+*   **Objective:** Identify if the rootkit detected on host <AGENT_HOSTNAME> was installed through lateral movement or if it led to further system compromise.
 
 *   **Key Data Sources/Tools (Prioritized):**
-    1.  **Velociraptor (Target Hostname: <AGENT_HOSTNAME>):** Utilize Velociraptor's capabilities to scan for modifications to key system files and binaries.
-    2.  **Wazuh API (for Agent ID <AGENT_ID>):** Query Wazuh logs for any alerts related to tampering with system binaries or files.
-    3.  **Linux Command Line (on <AGENT_HOSTNAME>):** Perform manual checks on critical system files and directories.
+    1.  **Velociraptor (Target Hostname: <AGENT_HOSTNAME>):** Run advanced queries to detect lateral movement artifacts, persistence mechanisms, and unusual network connections.
+    2.  **Wazuh API (Target Agent ID: <AGENT_ID>):** Search logs for related events (e.g., failed login attempts, unauthorized access, suspicious process executions).
+    3.  **Organizational Data Lookup (e.g., Asset Inventory, User Access Logs):** Cross-reference the compromised host against recent changes in user accounts, permissions, or network configurations.
 
 *   **Steps & Example Commands/Queries:**
-    1.  **Velociraptor (Target Hostname: <AGENT_HOSTNAME>):**
-        * Run a custom VQL artifact to detect changes in critical system binaries and files:
+    1.  **Velociraptor (Advanced Queries):**
+        * Detect lateral movement:
             ```sql
-            SELECT * FROM Artifact.Custom.RootkitScan(Hostname='<AGENT_HOSTNAME>')
+            SELECT * FROM Artifact.Linux.NetworkConnections()
+            WHERE Time > DATE_SUB(NOW(), INTERVAL 24 HOUR) AND DestinationIp IN ('<AGENT_IP>', '<OTHER_AGENT_IPS>')
             ```
-        * This artifact should specifically focus on checking for alterations in files such as `/bin/bash`, `/usr/bin/passwd`, `/sbin/mount`, `/usr/sbin/sshd`, etc.
-        * It should also include checks for modifications in critical directories like `/bin`, `/sbin`, `/lib`, `/usr/lib`, `/usr/local/bin`.
-        * Output should include file paths, hashes before and after modification, and any other relevant metadata.
+        * Find persistence mechanisms:
+            ```sql
+            SELECT * FROM Artifact.Linux.PersistenceMechanisms()
+            WHERE Path LIKE '/usr/bin/%' OR Path LIKE '/opt/%'
+            ```
+        * Look for unusual network connections:
+            ```sql
+            SELECT * FROM Artifact.Linux.UnusualNetworkConnections()
+            WHERE DestinationIp IN ('<AGENT_IP>', '<OTHER_AGENT_IPS>')
+            ```
 
-    2.  **Wazuh API (Target Agent ID: <AGENT_ID>):**
-        * Search for alerts related to tampering with system binaries or files:
+    2.  **Wazuh API (Generic Log Search):**
+        * Search for failed login attempts:
             ```http
-            GET /agents/<AGENT_ID>/logs/summary?q=rule.description:Tampered%20System%20Binary%20OR%20Modified%20Critical%20Files
+            GET /agents/<AGENT_ID>/logs/summary?q=failed_login_attempt
             ```
-        * Look for alerts generated by rules like 5200 ("Suspicious File Modification"), 5201 ("Tampered System Binary"), or others that indicate unauthorized changes to critical files.
+        * Look for unauthorized access:
+            ```http
+            GET /agents/<AGENT_ID>/logs/summary?q=unauthorized_access
+            ```
+        * Search for suspicious process executions:
+            ```http
+            GET /agents/<AGENT_ID>/logs/summary?q=suspicious_process_execution
+            ```
 
-        * Manually inspect critical system files and directories:
-            * Check the integrity of `/bin/bash`, `/usr/bin/passwd`, `/sbin/mount`, `/usr/sbin/sshd`, etc.:
-                ```bash
-                sha256sum /bin/bash /usr/bin/passwd /sbin/mount /usr/sbin/sshd
-                ```
-            * Compare the checksums against known good values stored elsewhere (e.g., in a secure backup system).
-            * Inspect critical directories like `/bin`, `/sbin`, `/lib`, `/usr/lib`, `/usr/local/bin`:
-                ```bash
-                ls -lAh /bin/* /sbin/* /lib/* /usr/lib/* /usr/local/bin/*
-                ```
-            * Look for unexpected permissions, ownership changes, or new files that weren't there previously.
+    3.  **Organizational Data Lookup (Asset Inventory):**
+        * Check for recent changes in user accounts:
+            ```bash
+            # Example lookup script
+            echo "Checking user accounts..."
+            curl -s | jq '.[] | select(.username == "<USERNAME>")'
+            ```
+        * Review recent permission changes:
+            ```bash
+            # Example lookup script
+            echo "Reviewing recent permission changes..."
+            curl -s | jq '.[] | select(.action == "grant")'
+            ```
 
 *   **Expected Outcome/Interpretation:**
-    - ✅ If Velociraptor finds no altered files, and Wazuh shows no related alerts, and manual inspection confirms everything looks normal, then the rootkit hasn't affected critical recovery files.
-    - ❌ If Velociraptor detects altered files, especially ones crucial for recovery, or Wazuh reports tampering alerts, or manual inspection reveals discrepancies, proceed with further analysis and containment steps.
+    - ✅ If lateral movement is confirmed (e.g., new connections to other hosts, unexpected persistence mechanisms), it strengthens the case for further investigation into the broader attack scope.
+    - ❌ If no additional indicators are found beyond the initial rootkit detection, focus on securing the compromised host and monitoring for future anomalies.
+--------------------------------------------------
+
+Question 8: Can we retrieve a memory dump or forensic image of 'ALU-ORDPROC-PROD-01' to analyze the hidden process?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Obtain a memory snapshot or forensic image of the affected system (<AGENT_HOSTNAME>) to inspect the hidden process ('<PROCESS_ID>') and determine if it's a legitimate rootkit or a false positive.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Velociraptor (on <AGENT_HOSTNAME>):** Perform live memory acquisition and analysis.
+    2.  **Wazuh API (for Agent ID <AGENT_ID>):** Query logs for related events and extract necessary metadata.
+    3.  **Organizational Forensic Tools (e.g., FTK Imager, EnCase, Volatility):** Analyze offline images for deeper inspection.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **Live Memory Acquisition (Velociraptor):**
+        * Target Hostname: <AGENT_HOSTNAME>
+        * Query to collect memory snapshot:
+            ```sql
+            SELECT * FROM Artifact.Linux.Memdump(Hostname='<AGENT_HOSTNAME>')
+            ```
+        * Extractor Name: `Memdump`
+        * Output Path: Specify a local directory where the memory dump will be saved.
+
+    2.  **Log Analysis (Wazuh API):**
+        * Endpoint: `GET /agents/<AGENT_ID>/logs/summary`
+        * Query Parameters:
+            * `q`: `rule.groups:rootcheck AND data.process.pid:<PROCESS_ID>`
+        * Expected Results:
+            * Timestamp of initial rootcheck alert.
+            * Any subsequent alerts mentioning the same process.
+            * Relevant log entries showing process creation or termination.
+
+    3.  **Offline Image Creation (FTK Imager):**
+        * Tool: FTK Imager or similar forensic tool.
+        * Steps:
+            * Connect to the remote machine over SMB or SSH.
+            * Create a new case in FTK Imager.
+            * Add the remote drive as a source.
+            * Select the appropriate partition/drive containing the operating system.
+            * Acquire a full disk image or specific partitions of interest.
+            * Save the image locally for analysis.
+
+    4.  **Memory Analysis (Volatility Framework):**
+        * Tool: Volatility Framework.
+        * Steps:
+            * Load the acquired memory dump into Volatility.
+            * Run volatility plugins such as `volshell` or `pslist` to enumerate processes.
+            * Inspect process memory regions for hidden artifacts.
+            * Look for signs of rootkits, hooks, or other evasion techniques.
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If the memory dump reveals the presence of a rootkit or suspicious code, it confirms the alert.
+    - ❌ If no rootkit is detected, review the original alert and consider false positives or misconfigurations.
+--------------------------------------------------
+
+Question 9: Are there any security controls or endpoint protection solutions deployed that might detect or mitigate rootkits?
+Detailed Plan:
+**Investigative Plan:**
+*   **Objective:** Identify which security controls or endpoint protection solutions are deployed on host <AGENT_HOSTNAME>.
+
+*   **Key Data Sources/Tools (Prioritized):**
+    1.  **Organizational Asset Inventory:** Look up <AGENT_HOSTNAME> in asset management system for installed software.
+    2.  **EDR/Endpoint Protection Console:** Check for active agents or policies on <AGENT_HOSTNAME> in EDR/XDR console.
+    3.  **Security Policy Documentation:** Review network segmentation, patching schedules, and security baselines for <AGENT_HOSTNAME>.
+
+*   **Steps & Example Commands/Queries:**
+    1.  **Asset Inventory Lookup (via Web Interface or API):**
+        * Find <AGENT_HOSTNAME> in asset inventory tool or spreadsheet.
+        * Look for columns related to installed antivirus, EDR, HIDS, firewalls, etc.
+        * Note: This might require manual review or querying a database/API.
+
+    2.  **EDR/XDR Console (if available):**
+        * Log into EDR/XDR console.
+        * Navigate to Agents or Devices section.
+        * Search for <AGENT_HOSTNAME> or filter by hostname/IP range.
+        * Check if any agents are currently online and what protections they have enabled.
+
+    3.  **Network Segmentation Map:**
+        * Locate <AGENT_HOSTNAME> in network diagram or map.
+        * Check if it's behind a firewall or in a DMZ.
+        * Note: This might involve reviewing Visio diagrams or asking network team.
+
+*   **Expected Outcome/Interpretation:**
+    - ✅ If <AGENT_HOSTNAME> has EDR, AV, or HIDS installed and actively reporting, it likely has basic rootkit detection capabilities.
+    - ❌ If <AGENT_HOSTNAME> is only protected by a firewall or has no endpoint protection at all, it's more vulnerable to rootkits.
+    -? If <AGENT_HOSTNAME> is in a segmented network without internet access, it might still be protected by air-gapped security measures.
 --------------------------------------------------
