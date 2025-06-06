@@ -5,11 +5,12 @@ Rule ID: 521
 Rule Description: Possible kernel level rootkit
 MITRE Technique ID: T1014 – Rootkit
 Agent ID: ALU-003
-Agent Name: ALU-ORDPROC-PROD-01
+Agent Hostname: ALU-ORDPROC-PROD-01
 Agent IP: 10.60.5.25
-Group: aluskort-prod
+Groups: ossec, rootcheck
 Title: Process '2508' hidden from /proc.
+Location: rootcheck
 Decoder: rootcheck
 --- END ---
 ------------------------------------------------------------------------------------
-  ✅ Parsed and validated 11 unique IOC key(s).
+  ✅ Parsed and validated 12 unique IOC key(s).
