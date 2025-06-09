@@ -1,0 +1,11 @@
+{
+  "Timestamp": "2024-05-21T10:15:45.789+0000",
+  "Alert ID": "1716286545.16316133",
+  "Rule Description": "Possible kernel level rootkit",
+  "MITRE Technique ID": "T1014 \u2013 Rootkit",
+  "Agent ID": "ALU-013",
+  "Agent Hostname": "ALU-SUPPORT-PROD-01",
+  "Agent IP": "10.60.8.10",
+  "File Path": "/tmp/.X11-unix/Xrootkit",
+  "Decoder": "rootcheck"
+}

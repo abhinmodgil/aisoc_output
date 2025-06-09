@@ -1,0 +1,17 @@
+{
+  "Timestamp": "2024-05-21T10:10:30.456+0000",
+  "Alert ID": "1716286230.10158622",
+  "Rule ID": "31533",
+  "Rule Description": "High amount of POST requests in a small period of time (likely bot).",
+  "MITRE Technique ID": "T1498 \u2013 Network Denial of Service",
+  "Agent ID": "ALU-001",
+  "Agent Hostname": "ALU-WEB-PROD-01",
+  "Agent IP": "10.50.1.10",
+  "Labels": "group: aluskort-prod",
+  "Source IP": "198.51.100.25",
+  "HTTP Method": "POST",
+  "URL Path": "/cart/add",
+  "HTTP Status Code": "200",
+  "Location": "C:\\\\inetpub\\\\logs\\\\LogFiles\\\\W3SVC1\\\\u_ex240521.log",
+  "Decoder": "web-accesslog"
+}

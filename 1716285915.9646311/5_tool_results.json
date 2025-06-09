@@ -1,0 +1,50 @@
+[
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "Inspect process `2508` on host `ALU-ORDPROC-PROD-01`. What is its full command line? Who started it?",
+      "query": "SELECT * FROM get_process(pid=2508,host=\"ALU-ORDPROC-PROD-01\")"
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "List all open files and network sockets associated with process `2508`. Are they legitimate?",
+      "query": "SELECT * FROM list_files(pid=2508,host=\"ALU-ORDPROC-PROD-01\")\nSELECT * FROM list_sockets(pid=2508,host=\"ALU-ORDPROC-PROD-01\")"
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Check the agent's vulnerability database for any recent updates related to Linux kernel exploits.",
+      "query": "agent.id:\"ALU-003\" AND data.os:\"Linux\" AND data.package_name:\"kernel\" AND data.package_version:[* TO *]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Run a quick scan using the Wazuh rootkit detection module against the host.",
+      "query": "wazuh-rootkit"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "What is the purpose of the `ALU-ORDPROC-PROD-01` host? Is it a production server?",
+      "query": "SELECT * FROM hosts WHERE name = \"ALU-ORDPROC-PROD-01\""
+    },
+    "result": "General search found match for asset 'ALU-ORDPROC-PROD-01' in asset data:\n          AssetID            AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status         Location            OS                       Notes/Description LastMaintenance MaintenanceWindow\n2  ALU-ASSET-1003  ALU-ORDPROC-PROD-01  Virtual Server  10.60.5.25  TEAM-ALU-ECOMM   PPL-ALU-301                High  Production  Azure West US 2  Linux Ubuntu  Hosts backend order processing service      2024-05-01    Sat 2-4 AM UTC\n\nGeneral search found match for asset '10.60.5.25' in asset data:\n          AssetID            AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status         Location            OS                       Notes/Description LastMaintenance MaintenanceWindow\n2  ALU-ASSET-1003  ALU-ORDPROC-PROD-01  Virtual Server  10.60.5.25  TEAM-ALU-ECOMM   PPL-ALU-301                High  Production  Azure West US 2  Linux Ubuntu  Hosts backend order processing service      2024-05-01    Sat 2-4 AM UTC"
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "Who has access to this host? Can we confirm whether the user who triggered the alert (`root`) is authorized to run such a process?",
+      "query": "SELECT * FROM users WHERE name = \"root\" AND assigned_hosts LIKE \"%ALU-ORDPROC-PROD-01%\""
+    },
+    "result": "General search found match for asset 'ALU-ORDPROC-PROD-01' in asset data:\n          AssetID            AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status         Location            OS                       Notes/Description LastMaintenance MaintenanceWindow\n2  ALU-ASSET-1003  ALU-ORDPROC-PROD-01  Virtual Server  10.60.5.25  TEAM-ALU-ECOMM   PPL-ALU-301                High  Production  Azure West US 2  Linux Ubuntu  Hosts backend order processing service      2024-05-01    Sat 2-4 AM UTC\n\nGeneral search found match for asset '10.60.5.25' in asset data:\n          AssetID            AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status         Location            OS                       Notes/Description LastMaintenance MaintenanceWindow\n2  ALU-ASSET-1003  ALU-ORDPROC-PROD-01  Virtual Server  10.60.5.25  TEAM-ALU-ECOMM   PPL-ALU-301                High  Production  Azure West US 2  Linux Ubuntu  Hosts backend order processing service      2024-05-01    Sat 2-4 AM UTC"
+  }
+]

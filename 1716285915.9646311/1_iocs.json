@@ -1,0 +1,12 @@
+{
+  "Timestamp": "2024-05-21T10:05:15.123+0000",
+  "Alert ID": "1716285915.9646311",
+  "Rule Description": "Possible kernel level rootkit",
+  "MITRE Technique ID": "T1014 \u2013 Rootkit",
+  "Agent ID": "ALU-003",
+  "Agent Hostname": "ALU-ORDPROC-PROD-01",
+  "Agent IP": "10.60.5.25",
+  "Labels": "group: aluskort-prod",
+  "Process ID": "2508",
+  "Decoder": "rootcheck"
+}

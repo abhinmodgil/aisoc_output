@@ -1,0 +1,24 @@
+{
+  "MITRE_Technique_ID": "T1498",
+  "Technique_Name": "Network Denial of Service",
+  "Critical_Investigation_Dimensions": [
+    "Network Behavior"
+  ],
+  "Supporting_Investigation_Dimensions": [
+    "IOC in Threat Intel",
+    "Process Behavior"
+  ],
+  "Low_Priority_Dimensions": [
+    "Host Vulnerability",
+    "User Attribution",
+    "Contextual Guidance"
+  ],
+  "Normalized_Dimension_Weights": {
+    "Network Behavior": 40,
+    "IOC in Threat Intel": 30,
+    "Process Behavior": 20,
+    "Host Vulnerability": 5,
+    "User Attribution": 5,
+    "Contextual Guidance": 0
+  }
+}
