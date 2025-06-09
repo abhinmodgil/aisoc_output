@@ -3,39 +3,30 @@
 import streamlit as st
 import requests
 import base64
-import re
-import pandas as pd
 import json
+import re
 
 # --- Page Configuration (MUST BE THE FIRST STREAMLIT COMMAND) ---
 st.set_page_config(layout="wide", page_title="AI SOC Dashboard")
 
 # --- GitHub Configuration ---
 GITHUB_USERNAME = "abhinmodgil"
-GITHUB_REPO_NAME = "aisoc_output" # This MUST be a PUBLIC repository
+GITHUB_REPO_NAME = "aisoc_output"
 GITHUB_BRANCH = "main"
-WAZUH_ALERTS_FILE_PATH = "jan30_alerts.json"
 
-# Informational message can come after page config
-st.info(
-    "ℹ️ This app is configured for public GitHub access without a PAT. "
-    f"Ensure the target repository '{GITHUB_USERNAME}/{GITHUB_REPO_NAME}' is public. "
-    "API rate limits for unauthenticated requests will apply."
-)
 
-# --- GitHub Helper Functions with Caching for Performance ---
+# --- GitHub Helper Functions (Public Repo Version - No Token Needed) ---
 
 @st.cache_data(ttl=300)  # Cache the list of alerts for 5 minutes
-def list_alert_directories(username, repo, branch, token):
+def list_alert_directories(username, repo, branch):
     """
-    Lists directories from the root of the GitHub repository,
-    and filters for those that look like alert IDs.
+    Lists directories (alert IDs) from the root of a PUBLIC GitHub repository.
+    Filters for directories that look like alert IDs.
     """
     api_url = f"https://api.github.com/repos/{username}/{repo}/contents/?ref={branch}"
-    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
     dir_names = []
     try:
-        response = requests.get(api_url, headers=headers)
+        response = requests.get(api_url)
         response.raise_for_status()
         for item in response.json():
             # Filter for directories whose names are numeric (allowing one decimal point)
@@ -43,7 +34,9 @@ def list_alert_directories(username, repo, branch, token):
                 dir_names.append(item["name"])
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:
-            st.error(f"The repository '{repo}' was not found. Please check your configuration.")
+            st.error(f"The repository '{repo}' was not found. Please check that it is public and the name is correct.")
+        elif e.response.status_code == 403:
+            st.error("API rate limit exceeded for unauthenticated requests. Please wait a while before reloading.")
         else:
             st.error(f"HTTP error listing alert directories: {e}")
     except Exception as e:
@@ -52,18 +45,16 @@ def list_alert_directories(username, repo, branch, token):
 
 
 @st.cache_data(ttl=300) # Cache file content for 5 minutes
-def get_github_file_content(username, repo, file_path, branch, token):
-    """Fetches and decodes file content from a GitHub file path."""
+def get_github_file_content(username, repo, file_path, branch):
+    """Fetches and decodes file content from a PUBLIC GitHub file path."""
     api_url = f"https://api.github.com/repos/{username}/{repo}/contents/{file_path}?ref={branch}"
-    headers = {"Authorization": f"token {token}", "Accept": "application/vnd.github.v3+json"}
     try:
-        response = requests.get(api_url, headers=headers)
+        response = requests.get(api_url)
         response.raise_for_status()
         content_data = response.json()
         if "content" in content_data:
             return base64.b64decode(content_data["content"]).decode('utf-8')
     except requests.exceptions.HTTPError as e:
-        # 404 is a common case (a phase might not have run), so we don't show a big error.
         if e.response.status_code != 404:
             st.warning(f"Could not retrieve file '{file_path}': HTTP {e.response.status_code}")
     except Exception as e:
@@ -73,9 +64,9 @@ def get_github_file_content(username, repo, file_path, branch, token):
 # --- Main App UI ---
 
 st.title("🛡️ AI SOC Investigation Dashboard")
-st.markdown(f"Displaying investigation results from GitHub: `{GITHUB_USERNAME}/{GITHUB_REPO_NAME}`")
+st.info(f"Displaying investigation results from public GitHub repository: `{GITHUB_USERNAME}/{GITHUB_REPO_NAME}`")
 
-alert_ids = list_alert_directories(GITHUB_USERNAME, GITHUB_REPO_NAME, GITHUB_BRANCH, GH_TOKEN_FOR_REQUESTS)
+alert_ids = list_alert_directories(GITHUB_USERNAME, GITHUB_REPO_NAME, GITHUB_BRANCH)
 
 st.sidebar.header("🚨 Alert Selection")
 selected_alert_id = st.sidebar.selectbox(
@@ -108,7 +99,7 @@ else:
     data = {}
     with st.spinner(f"Fetching investigation data for {selected_alert_id}..."):
         for key, fname in filenames.items():
-            data[key] = get_github_file_content(GITHUB_USERNAME, GITHUB_REPO_NAME, f"{selected_alert_id}/{fname}", GITHUB_BRANCH, GH_TOKEN_FOR_REQUESTS)
+            data[key] = get_github_file_content(GITHUB_USERNAME, GITHUB_REPO_NAME, f"{selected_alert_id}/{fname}", GITHUB_BRANCH)
 
     # --- Primary Dashboard View ---
     summary_md = data["summary"]
