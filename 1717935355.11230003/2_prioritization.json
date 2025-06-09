@@ -1,0 +1,24 @@
+{
+  "MITRE_Technique_ID": "T1059.003",
+  "Technique_Name": "Command and Scripting Interpreter: Windows Command Shell",
+  "Critical_Investigation_Dimensions": [
+    "Process Behavior"
+  ],
+  "Supporting_Investigation_Dimensions": [
+    "Host Vulnerability",
+    "IOC in Threat Intel"
+  ],
+  "Low_Priority_Dimensions": [
+    "User Attribution",
+    "Network Behavior",
+    "Contextual Guidance"
+  ],
+  "Normalized_Dimension_Weights": {
+    "Process Behavior": 40,
+    "Host Vulnerability": 30,
+    "IOC in Threat Intel": 20,
+    "User Attribution": 5,
+    "Network Behavior": 5,
+    "Contextual Guidance": 0
+  }
+}

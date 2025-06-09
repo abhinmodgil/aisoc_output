@@ -1,0 +1,6 @@
+{
+  "alert_id": "1717933515.11230001",
+  "final_risk_score": 30,
+  "acm_used": 1.0,
+  "breakdown": "  - Network Behavior:\n    - (Score: 0 * W: 40% / 100) * VPM: 1.5 * ACM: 1.0 = 0.00\n  - IOC in Threat Intel:\n    - (Score: 100 * W: 30% / 100) * VPM: 1.0 * ACM: 1.0 = 30.00\n  - Contextual Guidance:\n    - (Score: 0 * W: 20% / 100) * VPM: 1.5 * ACM: 1.0 = 0.00\n  - User Attribution: No score available. Contribution is 0.\n  - Process Behavior: No score available. Contribution is 0.\n  - Host Vulnerability: No score available. Contribution is 0."
+}

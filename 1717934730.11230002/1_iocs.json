@@ -1,0 +1,14 @@
+{
+  "Timestamp": "2025-06-09T12:05:30.987+0000",
+  "Alert ID": "1717934730.11230002",
+  "Rule ID": "800002",
+  "Rule Description": "Malicious file hash detected on endpoint",
+  "MITRE Technique ID": "T1204.002 \u2013 User Execution: Malicious File",
+  "Agent ID": "ALU-008",
+  "Agent Hostname": "ALU-WIN-LAP-DEV01",
+  "Agent IP": "10.60.1.50",
+  "File Path": "C:\\Users\\John\\Downloads\\invoice.exe",
+  "File Hash (SHA256)": "9785001b0dcf755eddb8af294a373c0b87b2498660f724e76c4d53f9c217c7a3",
+  "IOC Source": "MISP",
+  "Decoder": "fim"
+}

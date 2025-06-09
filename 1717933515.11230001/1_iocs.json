@@ -1,0 +1,14 @@
+{
+  "Timestamp": "2025-06-09T11:45:15.123+0000",
+  "Alert ID": "1717933515.11230001",
+  "Rule ID": "800001",
+  "Rule Description": "Malicious IP detected in network traffic",
+  "MITRE Technique ID": "T1040 \u2013 Network Sniffing",
+  "Agent ID": "ALU-007",
+  "Agent Hostname": "ALU-FW-EDGE-01",
+  "Agent IP": "10.50.3.20",
+  "Source IP": "10.50.3.20",
+  "Destination IP": "104.207.51.245",
+  "IOC Source": "MISP",
+  "Decoder": "firewall_log"
+}

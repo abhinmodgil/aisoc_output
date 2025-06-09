@@ -1,0 +1,42 @@
+[
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "On host 'ALU-ENDUSR-01', what was the parent process of the 'powershell.exe' process that ran the malicious command?",
+      "query": "SELECT ParentProcessId, ParentCommandLine, PID, CommandLine\nFROM processes(host=\"ALU-ENDUSR-01\")\nWHERE ProcessName = \"powershell.exe\" AND CommandLine =~ \"cmd\\.exe \\/c powershell \\-enc.*\""
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "What child processes, network connections, or file modifications did the 'powershell.exe' process initiate?",
+      "query": "SELECT ChildProcessId, ChildCommandLine, NetConn.LocalAddr, NetConn.RemoteAddr, FileMod.Path, FileMod.MD5\nFROM processes(host=\"ALU-ENDUSR-01\", pid=PID)\nJOIN netconn ON netconn.pid == PID\nJOIN filemod ON filemod.pid == PID\nWHERE ProcessName = \"powershell.exe\""
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Has the host 'ALU-ENDUSR-01' been flagged for any recent security incidents or vulnerabilities?",
+      "query": "agent.name:\"ALU-ENDUSR-01\" AND @timestamp:[2025-06-09T07:00:00.000Z TO 2025-06-16T07:00:00.000Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Are there any open ports or services on 'ALU-ENDUSR-01' that could indicate compromise?",
+      "query": "agent.name:\"ALU-ENDUSR-01\" AND data.port IN (1, 2, 3,..., 65535) AND data.protocol IN (\"tcp\", \"udp\")"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "MISP",
+      "question": "Is the hash of the encoded PowerShell command (`cmd.exe /c powershell -enc...`) present in MISP? What are its associated tags, events, and reputation?",
+      "query": "search(hash=\"<hash_of_encoded_powershell_command>\")"
+    },
+    "result": "[SUCCESS] No attributes found in MISP for indicator: '<hash_of_encoded_powershell_command>'"
+  }
+]

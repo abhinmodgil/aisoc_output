@@ -1,0 +1,50 @@
+{
+  "Process Behavior": {
+    "final_score": 0,
+    "summary": "Aggregated from 2 question(s).",
+    "individual_question_scores": [
+      {
+        "question": "On host 'ALU-ENDUSR-01', what was the parent process of the 'powershell.exe' process that ran the malicious command?",
+        "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned.",
+        "score": 0,
+        "reason": "The question was not answered. The tool result indicates a simulation was run, but no actual data was returned to answer the question."
+      },
+      {
+        "question": "What child processes, network connections, or file modifications did the 'powershell.exe' process initiate?",
+        "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned.",
+        "score": 0,
+        "reason": "The question was not answered. The tool result indicates a simulation was run, but no actual data was returned to answer the question."
+      }
+    ]
+  },
+  "Host Vulnerability": {
+    "final_score": 0,
+    "summary": "Aggregated from 2 question(s).",
+    "individual_question_scores": [
+      {
+        "question": "Has the host 'ALU-ENDUSR-01' been flagged for any recent security incidents or vulnerabilities?",
+        "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned.",
+        "score": 0,
+        "reason": "The question was not answered. The tool result indicates a simulation was run, but no actual data was returned to address the question."
+      },
+      {
+        "question": "Are there any open ports or services on 'ALU-ENDUSR-01' that could indicate compromise?",
+        "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned.",
+        "score": 0,
+        "reason": "The question was not answered. The tool result indicates a simulation was run, but no actual data was returned to answer the question."
+      }
+    ]
+  },
+  "IOC in Threat Intel": {
+    "final_score": 100,
+    "summary": "Aggregated from 1 question(s).",
+    "individual_question_scores": [
+      {
+        "question": "Is the hash of the encoded PowerShell command (`cmd.exe /c powershell -enc...`) present in MISP? What are its associated tags, events, and reputation?",
+        "result": "[SUCCESS] No attributes found in MISP for indicator: '<hash_of_encoded_powershell_command>'",
+        "score": 100,
+        "reason": "The question was fully answered. The tool ran successfully and provided a definitive negative result, which completely addresses the question by confirming the absence of the specified hash in MISP.\n\n---"
+      }
+    ]
+  }
+}

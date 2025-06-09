@@ -1,0 +1,50 @@
+[
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Show all network traffic between Source IP `10.50.3.20` and Destination IP `104.207.51.245` in the last 24 hours. Are there other suspicious flows?",
+      "query": "agent.name:\"ALU-FW-EDGE-01\" AND data.srcip:\"10.50.3.20\" AND data.dstip:\"104.207.51.245\" AND @timestamp:[2025-06-08T11:45:15.123Z TO 2025-06-09T11:45:15.123Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "Search firewall logs on `ALU-FW-EDGE-01` for any connections involving `10.50.3.20`. Are there unusual patterns?",
+      "query": "SELECT * FROM firewall_logs(host=\"ALU-FW-EDGE-01\") WHERE srcip = \"10.50.3.20\" OR dstip = \"10.50.3.20\""
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "MISP",
+      "question": "Is the Destination IP `104.207.51.245` present in MISP? What are its associated tags, events, and reputation?",
+      "query": "search(ip=\"104.207.51.245\")"
+    },
+    "result": "[SUCCESS] No attributes found in MISP for indicator: '104.207.51.245'"
+  },
+  {
+    "command": {
+      "tool": "MISP",
+      "question": "Is the Source IP `10.50.3.20` present in MISP? What are its associated tags, events, and reputation?",
+      "query": "search(ip=\"10.50.3.20\")"
+    },
+    "result": "[SUCCESS] No attributes found in MISP for indicator: '10.50.3.20'"
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "What role does `ALU-FW-EDGE-01` play in the network architecture? Is it a perimeter firewall or internal gateway?",
+      "query": "SELECT role FROM devices WHERE name=\"ALU-FW-EDGE-01\""
+    },
+    "result": "No information found in the Organization Database for the provided IOCs or query."
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "What services does `ALU-FW-EDGE-01` typically allow through? Are there any unexpected ports open?",
+      "query": "SELECT port, protocol FROM allowed_ports WHERE name=\"ALU-FW-EDGE-01\""
+    },
+    "result": "No information found in the Organization Database for the provided IOCs or query."
+  }
+]

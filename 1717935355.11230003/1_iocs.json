@@ -1,0 +1,14 @@
+{
+  "Timestamp": "2025-06-09T12:15:55.567+0000",
+  "Alert ID": "1717935355.11230003",
+  "Rule ID": "800003",
+  "Rule Description": "Known malware behavior detected",
+  "MITRE Technique ID": "T1059.003 \u2013 Command and Scripting Interpreter: Windows Command Shell",
+  "Agent ID": "ALU-009",
+  "Agent Hostname": "ALU-ENDUSR-01",
+  "Agent IP": "10.60.2.30",
+  "Malicious Process": "powershell.exe",
+  "Malicious Command": "cmd.exe /c powershell -enc...",
+  "Malware Family": "Dridex",
+  "Decoder": "windows_process_creation"
+}

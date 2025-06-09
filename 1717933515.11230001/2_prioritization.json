@@ -1,0 +1,24 @@
+{
+  "MITRE_Technique_ID": "T1040",
+  "Technique_Name": "Network Sniffing",
+  "Critical_Investigation_Dimensions": [
+    "Network Behavior"
+  ],
+  "Supporting_Investigation_Dimensions": [
+    "IOC in Threat Intel",
+    "Contextual Guidance"
+  ],
+  "Low_Priority_Dimensions": [
+    "User Attribution",
+    "Process Behavior",
+    "Host Vulnerability"
+  ],
+  "Normalized_Dimension_Weights": {
+    "Network Behavior": 40,
+    "IOC in Threat Intel": 30,
+    "Contextual Guidance": 20,
+    "User Attribution": 5,
+    "Process Behavior": 5,
+    "Host Vulnerability": 0
+  }
+}
