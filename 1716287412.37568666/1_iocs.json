@@ -1,0 +1,20 @@
+{
+  "Timestamp": "2024-05-21T10:30:12.567+0000",
+  "Alert ID": "1716287412.37568666",
+  "Rule ID": "60227",
+  "Rule Description": "A new external device was recognized by the system",
+  "MITRE Technique ID": "T1092 \u2013 Communication Through Removable Media",
+  "Agent ID": "ALU-001",
+  "Agent Hostname": "ALU-WEB-PROD-01",
+  "Agent IP": "10.50.1.10",
+  "Labels": "group = aluskort-prod",
+  "Subject SID": "S-1-5-18",
+  "Subject Username": "ALU-WEB-PROD-01$",
+  "Subject Domain": "ALUSKORT-PROD",
+  "Subject Logon ID": "0x3e7",
+  "Device ID": "USBSTOR\\\\Disk&Ven_Generic&Prod_USB_Flash_Disk&Rev_1.00\\\\ABCDEF123456&0",
+  "Device Name": "Generic USB Flash Disk",
+  "Class ID": "{53f56307-b6bf-11d0-94f2-00a0c91efb8b}",
+  "Class Name": "DiskDrive",
+  "Decoder": "windows_eventchannel"
+}

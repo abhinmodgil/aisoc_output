@@ -1,0 +1,34 @@
+[
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "Who has access to the 'alu-localadmin' account on 'ALU-WEB-DEV-01'? Are they authorized to change local admin accounts?",
+      "query": "SELECT * FROM users WHERE username = 'alu-localadmin' AND hostname = 'ALU-WEB-DEV-01';"
+    },
+    "result": "General search found match for asset 'ALU-WEB-DEV-01' in asset data:\n          AssetID       AssetName       AssetType    Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality       Status        Location              OS                              Notes/Description LastMaintenance MaintenanceWindow\n4  ALU-ASSET-1005  ALU-WEB-DEV-01  Virtual Server  192.168.10.50  TEAM-ALU-ECOMM   PPL-ALU-302                 Low  Development  VCenter-AluDev  Windows Server  Development environment for shop.aluskort.com             NaT               NaN\n\nGeneral search found match for asset '192.168.10.50' in asset data:\n          AssetID       AssetName       AssetType    Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality       Status        Location              OS                              Notes/Description LastMaintenance MaintenanceWindow\n4  ALU-ASSET-1005  ALU-WEB-DEV-01  Virtual Server  192.168.10.50  TEAM-ALU-ECOMM   PPL-ALU-302                 Low  Development  VCenter-AluDev  Windows Server  Development environment for shop.aluskort.com             NaT               NaN"
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Search for all changes made to the 'alu-localadmin' account in the last 30 days. Was this behavior expected?",
+      "query": "agent.name:\"ALU-WEB-DEV-01\" AND data.username:\"alu-localadmin\" AND rule.groups:\"account_change\" AND @timestamp:[2024-05-20T10:00:00.000Z TO 2024-05-21T09:59:59.999Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "On host 'ALU-WEB-DEV-01', what was the parent process of the event that modified the 'alu-localadmin' account?",
+      "query": "SELECT Name, CommandLine, PPID\nFROM processes(host=\"ALU-WEB-DEV-01\")\nWHERE UserName =~ \"alu-localadmin\""
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "What other processes were running at the time of this modification? Did they appear legitimate?",
+      "query": "SELECT Name, CommandLine, PPID\nWHERE StartTime >= \"2024-05-21T10:20:00.000Z\" AND StartTime <= \"2024-05-21T10:25:00.000Z\""
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  }
+]

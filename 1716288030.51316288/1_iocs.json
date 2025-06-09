@@ -1,0 +1,16 @@
+{
+  "Timestamp": "2024-05-21T10:40:30.123+0000",
+  "Alert ID": "1716288030.51316288",
+  "Rule ID": "31154",
+  "Rule Description": "Multiple web server 401 error codes from same source ip.",
+  "MITRE Technique ID": "T1110 \u2013 Brute Force",
+  "Agent ID": "ALU-011",
+  "Agent Hostname": "ALU-AUTH-PROD-01",
+  "Agent IP": "10.50.2.5",
+  "Labels": "group: aluskort-security",
+  "Source IP": "192.168.10.50",
+  "HTTP Method": "POST",
+  "URL Path": "/oauth2/token",
+  "HTTP Status Code": "401",
+  "Decoder": "nginx"
+}

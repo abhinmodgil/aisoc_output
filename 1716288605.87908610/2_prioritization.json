@@ -1,0 +1,30 @@
+{
+  "MITRE_Technique_ID": [
+    "T1098",
+    "T1484"
+  ],
+  "Technique_Name": [
+    "Account Manipulation",
+    "Domain Policy Modification"
+  ],
+  "Critical_Investigation_Dimensions": [
+    "User Attribution",
+    "Process Behavior"
+  ],
+  "Supporting_Investigation_Dimensions": [
+    "Host Vulnerability",
+    "Contextual Guidance"
+  ],
+  "Low_Priority_Dimensions": [
+    "IOC in Threat Intel",
+    "Network Behavior"
+  ],
+  "Normalized_Dimension_Weights": {
+    "User Attribution": 30,
+    "Process Behavior": 25,
+    "Host Vulnerability": 20,
+    "Contextual Guidance": 15,
+    "IOC in Threat Intel": 5,
+    "Network Behavior": 5
+  }
+}

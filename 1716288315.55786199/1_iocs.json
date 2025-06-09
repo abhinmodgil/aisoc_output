@@ -1,0 +1,19 @@
+{
+  "Timestamp": "2024-05-21T10:45:15.987+0000",
+  "Alert ID": "1716288315.55786199",
+  "Rule ID": "60227",
+  "Rule Description": "A new external device was recognized by the system",
+  "MITRE Technique ID": "T1092 \u2013 Communication Through Removable Media",
+  "Agent ID": "ALU-006",
+  "Agent Hostname": "ALU-BCK-PROD-01",
+  "Agent IP": "10.50.1.30",
+  "Labels": "group = aluskort-infra",
+  "Subject SID": "S-1-5-18",
+  "Subject Username": "ALU-BCK-PROD-01$",
+  "Subject Domain": "ALUSKORT-PROD",
+  "Subject Logon ID": "0x3e7",
+  "Device ID": "USBSTOR\\\\Disk&Ven_Kingston&Prod_DataTraveler_3.0&Rev_PMAP\\\\001CC0EC34F0B0C091A60060&0",
+  "Device Name": "Kingston DataTraveler 3.0 USB Device",
+  "Class ID": "{53f56307-b6bf-11d0-94f2-00a0c91efb8b}",
+  "Class Name": "DiskDrive"
+}

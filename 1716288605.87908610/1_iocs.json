@@ -1,0 +1,10 @@
+{
+  "Timestamp": "2024-05-21T10:50:05.777+0000",
+  "Alert ID": "1716288605.87908610",
+  "Rule ID": "60154",
+  "Rule Description": "Administrators Group Changed",
+  "MITRE Technique ID": [
+    "T1098 \u2013 Account Manipulation",
+    "T1484 \u2013 Domain Policy Modification"
+  ]
+}

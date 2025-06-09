@@ -1,0 +1,58 @@
+[
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "Who has recently changed their primary group to 'Administrators'?",
+      "query": "SELECT * FROM users WHERE group='Administrators' ORDER BY last_modified DESC LIMIT 10;"
+    },
+    "result": "No information found in the Organization Database for the provided IOCs or query."
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Retrieve the full event details for this alert (`Alert ID: 1716288605.87908610`). Was this change authorized?",
+      "query": "rule.id:60154 AND @timestamp:[2024-05-21T10:45:05.777Z TO 2024-05-21T10:55:05.777Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "On the affected host, what process initiated the group modification?",
+      "query": "SELECT Name, CommandLine, PPID\nFROM processes(host=\"ALU-APPSRV-PROD-01\")\nWHERE CommandLine =~ \"net.exe\""
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "Did this process spawn any child processes or make any unusual network connections?",
+      "query": "SELECT Name, CommandLine, PPID\nFROM processes(host=\"ALU-APPSRV-PROD-01\", pid=<PID>)"
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Has the host been scanned for vulnerabilities recently? Are there any critical CVEs related to group manipulation?",
+      "query": "agent.name:\"ALU-APPSRV-PROD-01\" AND data.vulnerability_type:\"group manipulation\" AND data.severity:\"Critical\" AND @timestamp:[2024-05-21T09:45:05.777Z TO 2024-05-21T10:55:05.777Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "What is the normal procedure for changing group memberships in our environment?",
+      "query": "SELECT * FROM policies WHERE policy=\"group membership\" AND department=\"IT\";"
+    },
+    "result": "No information found in the Organization Database for the provided IOCs or query."
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "Have we had similar alerts before? If so, how were they resolved?",
+      "query": "SELECT * FROM incidents WHERE alert_id=1716288605.87908610 AND resolution_status=\"Resolved\";"
+    },
+    "result": "No information found in the Organization Database for the provided IOCs or query."
+  }
+]

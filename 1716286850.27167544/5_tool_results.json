@@ -1,0 +1,58 @@
+[
+  {
+    "command": {
+      "tool": "MISP",
+      "question": "Is the IP address `47.250.57.32` present in MISP? What are its associated tags, events, and reputation?",
+      "query": "search(ip=\"88.88.88.88\")"
+    },
+    "result": "[SUCCESS] No attributes found in MISP for indicator: '88.88.88.88'"
+  },
+  {
+    "command": {
+      "tool": "MISP",
+      "question": "Are there any related indicators (domains, URLs) linked to this IP in MISP?",
+      "query": "search(ip=\"88.88.88.88\", type=\"domain\")"
+    },
+    "result": "[ERROR] Could not parse a valid MISP query from: search(ip=\"88.88.88.88\", type=\"domain\")"
+  },
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "On host `ALU-WEB-PROD-01`, search for any processes that accessed `/config/wp-config.php.bak`. Was this access legitimate?",
+      "query": "SELECT Name, CommandLine, PID, PPID\nFROM processes(host=\"ALU-WEB-PROD-01\")\nWHERE FilePath =~ \"/config/wp-config.php.bak\""
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "Check for any unusual network connections originating from `ALU-WEB-PROD-01` around the time of the alert.",
+      "query": "SELECT StartTime, SrcAddr, DstAddr, Protocol, BytesSent, BytesReceived\nFROM netconn(host=\"ALU-WEB-PROD-01\")\nWHERE StartTime >= \"2024-05-21T10:15:50.912Z\" AND StartTime <= \"2024-05-21T10:25:50.912Z\"\nORDER BY StartTime DESC LIMIT 100"
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Has the host `ALU-WEB-PROD-01` been scanned recently for vulnerabilities? If so, were any critical issues found?",
+      "query": "agent.name:\"ALU-WEB-PROD-01\" AND data.event_id:\"110003\" AND @timestamp:[2024-05-21T00:00:00.000Z TO 2024-05-22T00:00:00.000Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "What software versions are running on `ALU-WEB-PROD-01`? Are they known to be vulnerable to attacks targeting wp-config.php files?",
+      "query": "SELECT * FROM SoftwareInventory WHERE HostName = \"ALU-WEB-PROD-01\" AND SoftwareName LIKE \"%wordpress%\""
+    },
+    "result": "General search found match for asset 'ALU-WEB-PROD-01' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC\n\nGeneral search found match for asset '10.50.1.10' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC"
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "Who manages the `ALU-WEB-PROD-01` server? Have they made recent changes to the configuration or deployed new services?",
+      "query": "SELECT * FROM ServerOwnership WHERE HostName = \"ALU-WEB-PROD-01\""
+    },
+    "result": "General search found match for asset 'ALU-WEB-PROD-01' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC\n\nGeneral search found match for asset '10.50.1.10' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC"
+  }
+]

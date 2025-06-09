@@ -1,0 +1,58 @@
+[
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "On host 'ALU-BCK-PROD-01', what processes were active when the removable media was detected?",
+      "query": "SELECT Name, CommandLine, StartTime, EndTime\nFROM processes(host=\"ALU-BCK-PROD-01\")\nWHERE StartTime >= \"2024-05-21T10:40:15.987Z\" AND StartTime <= \"2024-05-21T10:50:15.987Z\""
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "Did any processes attempt to read or copy files from the inserted drive?",
+      "query": "SELECT Name, CommandLine, StartTime, EndTime, PID, ParentPID\nFROM processes(host=\"ALU-BCK-PROD-01\", pid=*)\nWHERE StartTime >= \"2024-05-21T10:40:15.987Z\" AND StartTime <= \"2024-05-21T10:50:15.987Z\" AND CommandLine LIKE \"%USBSTOR%\" OR CommandLine LIKE \"%001CC0EC34F0B0C091A60060%\""
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Has this host ever had a similar USB-based attack before? Check for previous alerts involving removable devices.",
+      "query": "agent.name:\"ALU-BCK-PROD-01\" AND labels:\"group = aluskort-infra\" AND rule.description:\"A new external device was recognized by the system\" AND @timestamp:[2024-05-20T10:45:15.987Z TO 2024-05-21T10:45:15.987Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Are there any known vulnerabilities in the operating system or installed software that could allow unauthorized access via removable media?",
+      "query": "agent.name:\"ALU-BCK-PROD-01\" AND rule.description:\"Vulnerability found\" AND @timestamp:[2024-05-20T10:45:15.987Z TO 2024-05-21T10:45:15.987Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "Who has physical access to the backup server 'ALU-BCK-PROD-01'? Are they authorized to insert removable drives?",
+      "query": "SELECT * FROM users WHERE hostname=\"ALU-BCK-PROD-01\" AND role=\"Backup Operator\""
+    },
+    "result": "General search found match for asset 'ALU-BCK-PROD-01' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                           Notes/Description LastMaintenance MaintenanceWindow\n5  ALU-ASSET-1006  ALU-BCK-PROD-01  Virtual Server  10.50.1.30  TEAM-ALU-INFRA   PPL-ALU-102              Medium  Production  DC-Aluskort-A  Windows Server  Manages backups for DC-A servers via Veeam      2024-04-15    Sun 1-3 AM UTC\n\nGeneral search found match for asset '10.50.1.30' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                           Notes/Description LastMaintenance MaintenanceWindow\n5  ALU-ASSET-1006  ALU-BCK-PROD-01  Virtual Server  10.50.1.30  TEAM-ALU-INFRA   PPL-ALU-102              Medium  Production  DC-Aluskort-A  Windows Server  Manages backups for DC-A servers via Veeam      2024-04-15    Sun 1-3 AM UTC"
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "What is the purpose of the 'ALU-BCK-PROD-01' server? Is it supposed to accept removable media at all?",
+      "query": "SELECT * FROM servers WHERE hostname=\"ALU-BCK-PROD-01\" AND type=\"Backup Server\""
+    },
+    "result": "General search found match for asset 'ALU-BCK-PROD-01' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                           Notes/Description LastMaintenance MaintenanceWindow\n5  ALU-ASSET-1006  ALU-BCK-PROD-01  Virtual Server  10.50.1.30  TEAM-ALU-INFRA   PPL-ALU-102              Medium  Production  DC-Aluskort-A  Windows Server  Manages backups for DC-A servers via Veeam      2024-04-15    Sun 1-3 AM UTC\n\nGeneral search found match for asset '10.50.1.30' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                           Notes/Description LastMaintenance MaintenanceWindow\n5  ALU-ASSET-1006  ALU-BCK-PROD-01  Virtual Server  10.50.1.30  TEAM-ALU-INFRA   PPL-ALU-102              Medium  Production  DC-Aluskort-A  Windows Server  Manages backups for DC-A servers via Veeam      2024-04-15    Sun 1-3 AM UTC"
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "Have we seen similar alerts in other environments? How did those investigations proceed?",
+      "query": "SELECT * FROM incidents WHERE alert_id=\"1716288315.55786199\" AND rule_id=\"60227\""
+    },
+    "result": "General search found match for asset 'ALU-BCK-PROD-01' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                           Notes/Description LastMaintenance MaintenanceWindow\n5  ALU-ASSET-1006  ALU-BCK-PROD-01  Virtual Server  10.50.1.30  TEAM-ALU-INFRA   PPL-ALU-102              Medium  Production  DC-Aluskort-A  Windows Server  Manages backups for DC-A servers via Veeam      2024-04-15    Sun 1-3 AM UTC\n\nGeneral search found match for asset '10.50.1.30' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                           Notes/Description LastMaintenance MaintenanceWindow\n5  ALU-ASSET-1006  ALU-BCK-PROD-01  Virtual Server  10.50.1.30  TEAM-ALU-INFRA   PPL-ALU-102              Medium  Production  DC-Aluskort-A  Windows Server  Manages backups for DC-A servers via Veeam      2024-04-15    Sun 1-3 AM UTC"
+  }
+]

@@ -1,0 +1,58 @@
+[
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Show all web traffic from Source IP `192.168.10.50` to Agent IP `10.50.2.5` in the last hour. Were there other suspicious requests?",
+      "query": "agent.name:\"ALU-AUTH-PROD-01\" AND data.srcip:\"192.168.10.50\" AND data.dstip:\"10.50.2.5\" AND @timestamp:[2024-05-21T09:40:30.123Z TO 2024-05-21T10:40:30.123Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "Search web server logs on `ALU-AUTH-PROD-01` for any POST requests from `192.168.10.50` that resulted in a 401 Unauthorized response.",
+      "query": "SELECT * FROM webserver_logs(host=\"ALU-AUTH-PROD-01\") WHERE srcip=\"192.168.10.50\" AND method=\"POST\" AND status=401"
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "MISP",
+      "question": "Is the IP address `192.168.10.50` present in MISP? What are its associated tags, events, and reputation?",
+      "query": "search(ip=\"192.168.10.50\")"
+    },
+    "result": "[SUCCESS] No attributes found in MISP for indicator: '192.168.10.50'"
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "Who is the owner of the agent `ALU-011`? Are they authorized to access `/oauth2/token`?",
+      "query": "SELECT username, role FROM users WHERE agent_id = \"ALU-011\" AND path LIKE \"%/oauth2/token%\""
+    },
+    "result": "General search found match for asset 'ALU-AUTH-PROD-01' in asset data:\n           AssetID         AssetName       AssetType Hostname/IP   OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location            OS                                  Notes/Description LastMaintenance MaintenanceWindow\n10  ALU-ASSET-1011  ALU-AUTH-PROD-01  Virtual Server   10.50.2.5  TEAM-ALU-SEC   PPL-ALU-501            Critical  Production  DC-Aluskort-A  Linux Alpine  Handles user authentication via auth.aluskort.com      2024-01-10    Sat 1-2 AM UTC\n\nGeneral search found match for asset '10.50.2.5' in asset data:\n           AssetID         AssetName       AssetType Hostname/IP   OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location            OS                                  Notes/Description LastMaintenance MaintenanceWindow\n10  ALU-ASSET-1011  ALU-AUTH-PROD-01  Virtual Server   10.50.2.5  TEAM-ALU-SEC   PPL-ALU-501            Critical  Production  DC-Aluskort-A  Linux Alpine  Handles user authentication via auth.aluskort.com      2024-01-10    Sat 1-2 AM UTC"
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Search for authentication failures involving `ALU-011` in the last week. Did any occur around the time of the alert?",
+      "query": "agent.id:\"ALU-011\" AND data.event_type:\"authentication_failure\" AND @timestamp:[2024-05-14T09:40:30.123Z TO 2024-05-21T10:40:30.123Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "What is the purpose of the service running on `ALU-AUTH-PROD-01`? Is it expected to receive POST requests to `/oauth2/token`?",
+      "query": "SELECT description FROM services WHERE hostname = \"ALU-AUTH-PROD-01\" AND path LIKE \"%/oauth2/token%\""
+    },
+    "result": "General search found match for asset 'ALU-AUTH-PROD-01' in asset data:\n           AssetID         AssetName       AssetType Hostname/IP   OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location            OS                                  Notes/Description LastMaintenance MaintenanceWindow\n10  ALU-ASSET-1011  ALU-AUTH-PROD-01  Virtual Server   10.50.2.5  TEAM-ALU-SEC   PPL-ALU-501            Critical  Production  DC-Aluskort-A  Linux Alpine  Handles user authentication via auth.aluskort.com      2024-01-10    Sat 1-2 AM UTC\n\nGeneral search found match for asset '10.50.2.5' in asset data:\n           AssetID         AssetName       AssetType Hostname/IP   OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location            OS                                  Notes/Description LastMaintenance MaintenanceWindow\n10  ALU-ASSET-1011  ALU-AUTH-PROD-01  Virtual Server   10.50.2.5  TEAM-ALU-SEC   PPL-ALU-501            Critical  Production  DC-Aluskort-A  Linux Alpine  Handles user authentication via auth.aluskort.com      2024-01-10    Sat 1-2 AM UTC"
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Check the latest configuration changes made to `ALU-AUTH-PROD-01`. Have any recent updates been applied that might affect security posture?",
+      "query": "agent.name:\"ALU-AUTH-PROD-01\" AND data.type:\"configuration_change\" AND @timestamp:[2024-05-14T09:40:30.123Z TO 2024-05-21T10:40:30.123Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  }
+]

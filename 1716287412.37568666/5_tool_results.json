@@ -1,0 +1,66 @@
+[
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "On host 'ALU-WEB-PROD-01', what processes were active during the time of the event (`2024-05-21T10:30:12.567+0000`)?",
+      "query": "SELECT Name, CommandLine, StartTime\nFROM processes(host=\"ALU-WEB-PROD-01\")\nWHERE StartTime >= \"2024-05-21T10:25:12.567Z\" AND StartTime <= \"2024-05-21T10:35:12.567Z\"\nORDER BY StartTime DESC LIMIT 20"
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "Was there any unusual network activity from this host around the timestamp?",
+      "query": "SELECT Name, DestinationAddress, DestinationPort, StartTime\nFROM network(host=\"ALU-WEB-PROD-01\")\nWHERE StartTime >= \"2024-05-21T10:25:12.567Z\" AND StartTime <= \"2024-05-21T10:35:12.567Z\"\nAND DestinationPort!= 80 AND DestinationPort!= 443\nORDER BY StartTime DESC LIMIT 20"
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Has the host 'ALU-WEB-PROD-01' been recently scanned for vulnerabilities? Are there any critical findings related to removable media handling?",
+      "query": "agent.name:\"ALU-WEB-PROD-01\" AND data.rule_id:\"60227\" AND @timestamp:[2024-05-20T10:30:12.567Z TO 2024-05-21T10:30:12.567Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Check the Windows Event Logs for any recent alerts related to unauthorized devices being connected to this host.",
+      "query": "agent.name:\"ALU-WEB-PROD-01\" AND data.event_id:\"6005\" AND @timestamp:[2024-05-20T10:30:12.567Z TO 2024-05-21T10:30:12.567Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "Who has administrative access to the host 'ALU-WEB-PROD-01'? Are they aware of this rule triggering?",
+      "query": "SELECT username FROM users WHERE host=\"ALU-WEB-PROD-01\" AND role=\"administrator\""
+    },
+    "result": "General search found match for asset 'ALU-WEB-PROD-01' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC\n\nGeneral search found match for asset '10.50.1.10' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC"
+  },
+  {
+    "command": {
+      "tool": "Wazuh",
+      "question": "Search for any recent logins by the user 'ALU-WEB-PROD-01$' across the domain. Are there any anomalies?",
+      "query": "agent.name:\"*\" AND data.user:\"ALU-WEB-PROD-01$\" AND @timestamp:[2024-05-20T10:30:12.567Z TO 2024-05-21T10:30:12.567Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "What is the purpose of the host 'ALU-WEB-PROD-01'? Is it supposed to allow external devices?",
+      "query": "SELECT description FROM hosts WHERE name=\"ALU-WEB-PROD-01\""
+    },
+    "result": "General search found match for asset 'ALU-WEB-PROD-01' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC\n\nGeneral search found match for asset '10.50.1.10' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC"
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "Have there been any recent changes to security policies regarding removable media on this host?",
+      "query": "SELECT policy FROM policies WHERE host=\"ALU-WEB-PROD-01\" AND type=\"removable_media\" ORDER BY date DESC LIMIT 5"
+    },
+    "result": "General search found match for asset 'ALU-WEB-PROD-01' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC\n\nGeneral search found match for asset '10.50.1.10' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC"
+  }
+]

@@ -1,0 +1,68 @@
+{
+  "User Attribution": {
+    "final_score": 0,
+    "summary": "Aggregated from 2 question(s).",
+    "individual_question_scores": [
+      {
+        "question": "Who has recently changed their primary group to 'Administrators'?",
+        "result": "No information found in the Organization Database for the provided IOCs or query.",
+        "score": 0,
+        "reason": "The question was not answered. The tool result states that no information was found, but this is not a valid response to the question. If no relevant data exists, the tool should return a clear explanation like \"No users were found who have recently changed their primary group to 'Administrators'\", rather than simply stating \"No information found\".\n\n---"
+      },
+      {
+        "question": "Retrieve the full event details for this alert (`Alert ID: 1716288605.87908610`). Was this change authorized?",
+        "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned.",
+        "score": 0,
+        "reason": "The question was not answered. The tool result indicates a simulation was run, but no actual data was returned to answer the question."
+      }
+    ]
+  },
+  "Process Behavior": {
+    "final_score": 0,
+    "summary": "Aggregated from 2 question(s).",
+    "individual_question_scores": [
+      {
+        "question": "On the affected host, what process initiated the group modification?",
+        "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned.",
+        "score": 0,
+        "reason": "The question was not answered. The tool result indicates a simulation was run, but no actual data was returned to answer the question."
+      },
+      {
+        "question": "Did this process spawn any child processes or make any unusual network connections?",
+        "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned.",
+        "score": 0,
+        "reason": "The question was not answered. The tool result indicates a simulation was run, but no actual data was returned to address the question about child processes or network activity."
+      }
+    ]
+  },
+  "Host Vulnerability": {
+    "final_score": 0,
+    "summary": "Aggregated from 1 question(s).",
+    "individual_question_scores": [
+      {
+        "question": "Has the host been scanned for vulnerabilities recently? Are there any critical CVEs related to group manipulation?",
+        "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned.",
+        "score": 0,
+        "reason": "The question was not answered. The tool result indicates a simulation was run, but no actual data was returned to answer the question."
+      }
+    ]
+  },
+  "Contextual Guidance": {
+    "final_score": 0,
+    "summary": "Aggregated from 2 question(s).",
+    "individual_question_scores": [
+      {
+        "question": "What is the normal procedure for changing group memberships in our environment?",
+        "result": "No information found in the Organization Database for the provided IOCs or query.",
+        "score": 0,
+        "reason": "The question was not answered. The tool did not find any relevant information in the database, failing to address the question about normal procedures for group membership changes.\n\n---"
+      },
+      {
+        "question": "Have we had similar alerts before? If so, how were they resolved?",
+        "result": "No information found in the Organization Database for the provided IOCs or query.",
+        "score": 0,
+        "reason": "The question was not answered. The tool did not find any relevant information in the database, providing neither confirmation nor resolution of the alert.\n\n---"
+      }
+    ]
+  }
+}
