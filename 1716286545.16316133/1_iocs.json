@@ -7,5 +7,6 @@
   "Agent Hostname": "ALU-SUPPORT-PROD-01",
   "Agent IP": "10.60.8.10",
   "File Path": "/tmp/.X11-unix/Xrootkit",
+  "Title": "Anomaly detected in file '/tmp/.X11-unix/Xrootkit'.",
   "Decoder": "rootcheck"
 }

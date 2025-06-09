@@ -8,12 +8,6 @@
   "Agent Hostname": "ALU-WEB-PROD-01",
   "Agent IP": "10.50.1.10",
   "Labels": "group:aluskort-prod",
-  "Group": "windows, windows_security, authentication_failures",
-  "PCI DSS": "10.2.4, 10.2.5, 11.4",
-  "GDPR": "IV_35.7.d, IV_32.2",
-  "HIPAA": "164.312.b",
-  "NIST 800-53": "AU.14, AC.7, SI.4",
-  "TSC": "CC6.1, CC6.8, CC7.2, CC7.3",
   "Subject SID": "S-1-0-0",
   "Subject Logon ID": "0x0",
   "Target User SID": "S-1-0-0",
@@ -30,5 +24,6 @@
   "Process ID": "0x0",
   "IP Address": "10.50.1.30",
   "IP Port": "65244",
+  "Location": "EventChannel",
   "Decoder": "windows_eventchannel"
 }

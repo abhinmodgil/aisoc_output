@@ -1,5 +1,5 @@
 ### Executive Summary
-A possible kernel-level rootkit was detected on a normal-criticality asset, but the investigation lacks sufficient context to make a definitive determination.
+A possible rootkit installation was detected on a normal-criticality asset, but the investigation lacks sufficient context to confirm the severity.
 
 ### Final Verdict
 **Suspicious**
@@ -8,10 +8,10 @@ A possible kernel-level rootkit was detected on a normal-criticality asset, but 
 **Medium**
 
 ### Justification
-The final risk score of 20 indicates a moderate level of concern. The "Contextual Guidance" score of 100 confirms that the asset is a virtual server hosting the support ticketing system, which is a critical application. However, the "Host Vulnerability" score of 0 means there is no evidence of existing vulnerabilities on the host, reducing the likelihood of exploitation. The "Process Behavior" score of 0 indicates a critical visibility gap regarding the behavior of the detected file '/tmp/.X11-unix/Xrootkit'. Without understanding what actions the rootkit may have taken, the true impact remains unclear. While the alert correctly triggered, the lack of additional context prevents a confident conclusion.
+The final risk score of 27 indicates a moderate concern. The "Contextual Guidance" score of 100 means there is some relevant organizational knowledge about the asset, but the other dimensions—particularly "Host Vulnerability" and "Process Behavior"—are missing key details. The presence of a rootkit detection is concerning, especially given the asset's role in support ticketing. However, without deeper insight into the specific vulnerabilities present and the behavior of the rootkit, it cannot be definitively classified as malicious. Further investigation is necessary before taking containment or eradication actions.
 
 ### Recommended Actions
-- **Forensic Analysis:** Conduct a manual memory dump and deep inspection of the affected host to understand the scope of the rootkit's activities.
-- **Containment:** Isolate the host from the network until the investigation is completed.
-- **Patch Management:** Ensure the host is fully patched and up-to-date before returning it to service.
-- **Alert Tuning:** Review the detection logic to ensure similar alerts trigger only when supported by strong contextual evidence.
+- **Forensic Analysis:** Run a comprehensive memory dump and deep filesystem inspection on `ALU-SUPPORT-PROD-01`. Focus on identifying the rootkit's persistence mechanism and any associated files or processes.
+- **Vulnerability Assessment:** Check the asset's patch status and vulnerability exposure using tools like Nessus or OpenVAS. Confirm if any known exploits could enable the rootkit installation.
+- **Behavior Monitoring:** Deploy additional monitoring agents to capture real-time process execution and network traffic on the affected host.
+- **Containment (Conditional):** If the forensic analysis reveals active exploitation or lateral movement, consider isolating the host until remediation is completed.

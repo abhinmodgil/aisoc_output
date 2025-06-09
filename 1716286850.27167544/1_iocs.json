@@ -7,11 +7,11 @@
   "Agent ID": "ALU-001",
   "Agent Hostname": "ALU-WEB-PROD-01",
   "Agent IP": "10.50.1.10",
-  "Labels": "group: aluskort-prod",
+  "Labels": "group = aluskort-prod",
   "Source IP": "47.250.57.32",
   "HTTP Method": "GET",
   "URL Path": "/config/wp-config.php.bak",
   "HTTP Status Code": "404",
-  "Decoder": "web-accesslog",
-  "Location": "C:\\inetpub\\logs\\LogFiles\\W3SVC1\\u_ex240521.log"
+  "Location": "C:\\inetpub\\logs\\LogFiles\\W3SVC1\\u_ex240521.log",
+  "Decoder": "web-accesslog"
 }

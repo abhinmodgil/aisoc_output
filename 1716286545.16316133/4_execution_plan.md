@@ -1,81 +1,98 @@
 ### Reasoning Monologue
 
-1.  **Overall Analysis:** The alert is for a possible rootkit (T1014), which typically involves hiding malicious code at the kernel level. Since the alert includes a suspicious file path (/tmp/.X11-unix/Xrootkit), we should focus on understanding its origin and impact.
-2.  **Strategy for Velociraptor Queries:** We need to confirm if the file exists, check its creation/modification time, and determine whether the associated process is still active. Additionally, searching for related files in the same directory could reveal additional artifacts.
-3.  **Strategy for Wazuh Queries:** Given the nature of the alert, we should also investigate whether the host has been scanned for vulnerabilities recently and whether any related alerts have been triggered.
-4.  **Strategy for Organization Database Queries:** Understanding the role of the affected host and its management history can provide valuable context for prioritizing remediation efforts.
+1.  **Overall Analysis:** The alert is for a possible rootkit (T1014) on a support system. This is a high-risk situation requiring immediate investigation.
+2.  **Strategy for Velociraptor Queries:** Since the alert involves suspicious files under `/tmp`, we must trace back how they got there. We'll start with the creation time of the file and work backward to identify the parent process. Additionally, we'll check for related files in the same directory or nearby locations.
+3.  **Strategy for Wazuh Queries:** Given the nature of the alert, we should expand our search beyond just this one host. Checking for similar alerts across the organization can help us determine if this is an isolated incident or part of a larger campaign. We also want to know if the host has been compromised before, which might suggest a pattern of exploitation. Finally, running a port scan will give us insight into potential entry points used by attackers.
+4.  **Strategy for Organization Database Queries:** Understanding who has access to the affected host is crucial. We need to know if there have been any recent permission changes or if new users have been added. Additionally, knowing the role of the host within the organization will help prioritize our response. If it's a critical asset, we may need to take more aggressive containment measures. Lastly, checking when the last security audit occurred will provide context about the state of the system at the time of the attack.
 
 ### Execution Plan
 
 Tool: Velociraptor
-Question: On host 'ALU-SUPPORT-PROD-01', what is the full path of the `/tmp/.X11-unix/Xrootkit` file?
+Question: On host 'ALU-SUPPORT-PROD-01', what is the full path of the executable that created `/tmp/.X11-unix/Xrootkit`?
 Action Type: Search
 Input Parameters:
   hostname: ALU-SUPPORT-PROD-01
   filepath: /tmp/.X11-unix/Xrootkit
+  time_window: 5m
 <EXECUTE>
-SELECT Name, FilePath, CreationTime, ModificationTime FROM filesystem(host="ALU-SUPPORT-PROD-01") WHERE FilePath = "/tmp/.X11-unix/Xrootkit"
+SELECT Name, CommandLine, PPID, CreationTime
+FROM processes(host="ALU-SUPPORT-PROD-01")
+WHERE FilePath = "/tmp/.X11-unix/Xrootkit"
+ORDER BY CreationTime DESC LIMIT 1
 </EXECUTE>
 ---
 Tool: Velociraptor
-Question: What is the current state of the Xrootkit process (`/usr/bin/xr`) on this host? Is it still running?
+Question: What other files were created or modified around the time `/tmp/.X11-unix/Xrootkit` appeared?
 Action Type: Search
 Input Parameters:
   hostname: ALU-SUPPORT-PROD-01
-  commandline: /usr/bin/xr
+  filepath: /tmp/*
+  time_window: 5m
 <EXECUTE>
-SELECT Name, CommandLine, PPID, StartTime, EndTime FROM processes(host="ALU-SUPPORT-PROD-01") WHERE CommandLine =~ "/usr/bin/xr"
-</EXECUTE>
----
-Tool: Velociraptor
-Question: List all files created or modified within the past 24 hours in `/tmp/.X11-unix`. Are there any unusual files?
-Action Type: Search
-Input Parameters:
-  hostname: ALU-SUPPORT-PROD-01
-  dirpath: /tmp/.X11-unix
-  time_range: 24h
-<EXECUTE>
-SELECT Name, FilePath, CreationTime, ModificationTime FROM filesystem(host="ALU-SUPPORT-PROD-01", dirPath="/tmp/.X11-unix") WHERE CreationTime > now() - 24 * 3600 OR ModificationTime > now() - 24 * 3600
+SELECT Name, FilePath, CreationTime
+FROM processes(host="ALU-SUPPORT-PROD-01")
+WHERE FilePath LIKE "/tmp/%"
+AND CreationTime >= "2024-05-21T10:10:45.789Z"
+AND CreationTime <= "2024-05-21T10:20:45.789Z"
+GROUP BY Name, FilePath
+HAVING COUNT(*) > 1
 </EXECUTE>
 ---
 Tool: Wazuh
-Question: Has the host 'ALU-SUPPORT-PROD-01' been scanned recently for vulnerabilities? If so, were any related to rootkits or kernel exploits detected?
+Question: Has the host 'ALU-SUPPORT-PROD-01' ever had a rootkit detection before? Check the last 30 days of alerts.
 Action Type: Search
 Input Parameters:
   agent_name: ALU-SUPPORT-PROD-01
-  vulnerability_type: rootkit, kernel exploit
-  time_window: 7d
+  time_window: 30d
 <EXECUTE>
-agent.name:"ALU-SUPPORT-PROD-01" AND data.vulnerability_type:(rootkit OR kernel exploit) AND @timestamp:[2024-05-14T10:15:45.789Z TO 2024-05-21T10:15:45.789Z]
+agent.name:"ALU-SUPPORT-PROD-01" AND data.rule.description:"Possible kernel level rootkit" AND @timestamp:[2024-04-22T00:00:00.000Z TO 2024-05-21T10:25:45.789Z]
 </EXECUTE>
 ---
 Tool: Wazuh
-Question: Check the agent's log for any recent alerts related to rootkits or kernel-level threats.
+Question: Are there any open ports on this host that could indicate compromise? Run a port scan.
 Action Type: Search
 Input Parameters:
   agent_name: ALU-SUPPORT-PROD-01
-  alert_description: rootkit, kernel exploit
+  time_window: 1h
+<EXECUTE>
+agent.name:"ALU-SUPPORT-PROD-01" AND data.port:>1024 AND @timestamp:[2024-05-21T09:30:00.000Z TO 2024-05-21T10:40:00.000Z]
+</EXECUTE>
+---
+Tool: Organization Database
+Question: Who has access to the 'ALU-SUPPORT-PROD-01' machine? Are there any recent changes to user permissions?
+Action Type: Search
+Input Parameters:
+  hostname: ALU-SUPPORT-PROD-01
   time_window: 7d
 <EXECUTE>
-agent.name:"ALU-SUPPORT-PROD-01" AND data.rule.description:(rootkit OR kernel exploit) AND @timestamp:[2024-05-14T10:15:45.789Z TO 2024-05-21T10:15:45.789Z]
+SELECT * FROM users WHERE host="ALU-SUPPORT-PROD-01" ORDER BY change_date DESC LIMIT 10;
+</EXECUTE>
+---
+Tool: Wazuh
+Question: Did any unusual logins occur around the time of the alert? Look for failed login attempts or unexpected remote sessions.
+Action Type: Search
+Input Parameters:
+  agent_name: ALU-SUPPORT-PROD-01
+  time_window: 1h
+<EXECUTE>
+agent.name:"ALU-SUPPORT-PROD-01" AND data.event_id:4625 AND @timestamp:[2024-05-21T10:00:00.000Z TO 2024-05-21T10:50:00.000Z]
 </EXECUTE>
 ---
 Tool: Organization Database
-Question: What is the purpose of the 'ALU-SUPPORT-PROD-01' host? Who manages it? Is it a critical production server?
+Question: What is the purpose of the 'ALU-SUPPORT-PROD-01' machine? Is it a critical asset?
 Action Type: Search
 Input Parameters:
   hostname: ALU-SUPPORT-PROD-01
 <EXECUTE>
-SELECT * FROM hosts WHERE name='ALU-SUPPORT-PROD-01'
+SELECT * FROM assets WHERE name="ALU-SUPPORT-PROD-01";
 </EXECUTE>
 ---
 Tool: Organization Database
-Question: When was the last time this host underwent a security audit or penetration test? Was anything similar found then?
+Question: When was the last security audit performed on this host? Was anything noted as potentially vulnerable?
 Action Type: Search
 Input Parameters:
   hostname: ALU-SUPPORT-PROD-01
-  audit_type: security audit, penetration test
-  time_window: 12 months
+  time_window: 90d
 <EXECUTE>
-SELECT * FROM audits WHERE host='ALU-SUPPORT-PROD-01' AND type IN ('security audit', 'penetration test') AND date >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+SELECT * FROM audits WHERE host="ALU-SUPPORT-PROD-01" ORDER BY date DESC LIMIT 1;
 </EXECUTE>

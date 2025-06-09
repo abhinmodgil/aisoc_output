@@ -1,32 +1,40 @@
 ### Reasoning Monologue
 
-1.  **Overall Analysis:** The alert is for brute force attempts against a user ('diana.gomez') on a production web server ('ALU-WEB-PROD-01'). This is a medium-severity, multi-stage attack.
-2.  **Strategy for Wazuh Query:** Since the attacker is attempting to connect repeatedly, we should focus on network behavior rather than individual login failures. A wide time window (≥1 hour) will help us identify potential reconnaissance or follow-up actions.
-3.  **Strategy for Velociraptor Query:** Firewall logs can reveal if the attacker was actively trying to gain access through the perimeter defenses. We want to check both allowed and denied connections to see if the attacker was probing different ports or protocols.
-4.  **Strategy for MISP Query:** The attacker's IP (`203.0.113.75`) is a key IOC. We should perform a comprehensive MISP search to gather as much information about it as possible.
-5.  **Strategy for Organization Database Queries:** The target user ('diana.gomez') and the affected host ('ALU-WEB-PROD-01') are both internal assets. We need to retrieve detailed information about them from our internal database.
+1.  **Overall Analysis:** The alert is for brute-force attacks (T1110) targeting a production web server. The attacker appears to be attempting to access the account of a legitimate user (`diana.gomez`).
+2.  **Strategy for Wazuh Queries:** Given the nature of the attack, it’s important to investigate both the network behavior and the local system context. We’ll start with network-based reconnaissance to identify additional failed logon attempts, then pivot to the local system to gather more detailed information about the target user and potential lateral movement.
+3.  **Strategy for Velociraptor Query:** Since we have identified a suspicious IP address (`203.0.113.75`) involved in the attack, we will focus our investigation on the target host (`ALU-WEB-PROD-01`) to determine if there are any related events in the event logs.
+4.  **Strategy for MISP Query:** Given the presence of the IP address as an IOC, we will perform a lookup in MISP to retrieve additional contextual information about the IP address, such as its reputation, associated tags, and any known malicious activities linked to it.
+5.  **Strategy for Organization Database Queries:** Since the target user (`diana.gomez`) is part of the organization, we will leverage internal databases to gather more information about the user, including their ownership, role, and any recent changes to their account.
 
 ### Execution Plan
 
 Tool: Wazuh
-Question: Show all network traffic from IP `203.0.113.75` to `ALU-WEB-PROD-01` in the last 24 hours. Are there any unusual patterns?
+Question: Show all failed logons from IP `203.0.113.75` to `ALU-WEB-PROD-01` in the last 24 hours. Are there other failed attempts?
 Action Type: Search
 Input Parameters:
   source_ip: 203.0.113.75
-  destination_hostname: ALU-WEB-PROD-01
+  destination_host: ALU-WEB-PROD-01
   time_window: 24h
 <EXECUTE>
-agent.name:"ALU-WEB-PROD-01" AND data.srcip:"203.0.113.75" AND @timestamp:[2024-05-21T10:30:00.000Z TO 2024-05-22T10:30:00.000Z]
+agent.name:"ALU-WEB-PROD-01" AND data.destip:"203.0.113.75" AND data.status:"0xc000006d" AND @timestamp:[2024-05-21T10:30:20.890Z TO 2024-05-22T10:30:20.890Z]
 </EXECUTE>
 ---
 Tool: Velociraptor
-Question: Check firewall logs on `ALU-WEB-PROD-01` for any blocked connections from `203.0.113.75`.
+Question: Search event logs on `ALU-WEB-PROD-01` for any failed logons from `203.0.113.75`. Are they related to `diana.gomez`?
 Action Type: Search
 Input Parameters:
   hostname: ALU-WEB-PROD-01
   source_ip: 203.0.113.75
+  username: diana.gomez
 <EXECUTE>
-SELECT * FROM firewall_logs(host="ALU-WEB-PROD-01") WHERE srcip="203.0.113.75" OR dstip="203.0.113.75"
+SELECT * FROM event_logs(
+    host = "ALU-WEB-PROD-01",
+    event_id = 4625,
+    where = {
+        "sourceIp": "203.0.113.75",
+        "username": "diana.gomez"
+    }
+)
 </EXECUTE>
 ---
 Tool: MISP
@@ -39,38 +47,30 @@ search(ip="203.0.113.75")
 </EXECUTE>
 ---
 Tool: Organization Database
-Question: Who is the user `diana.gomez`? What role does she play within the organization?
+Question: Who is the owner of the account `diana.gomez`? What is their role within the organization?
 Action Type: Search
 Input Parameters:
   username: diana.gomez
 <EXECUTE>
-SELECT * FROM users WHERE username='diana.gomez'
+SELECT * FROM users WHERE username = "diana.gomez";
 </EXECUTE>
 ---
-Tool: Organization Database
-Question: Has `diana.gomez` ever logged in remotely before? When did they last access the system?
+Tool: Wazuh
+Question: Check for recent changes to the `diana.gomez` account in Active Directory. Has her password been reset recently?
 Action Type: Search
 Input Parameters:
   username: diana.gomez
+  time_window: 7d
 <EXECUTE>
-SELECT * FROM remote_logins WHERE username='diana.gomez' ORDER BY timestamp DESC LIMIT 10
+agent.name:"ALU-WEB-PROD-01" AND data.username:"diana.gomez" AND rule.groups:"password_change" AND @timestamp:[2024-05-21T10:30:20.890Z TO 2024-05-28T10:30:20.890Z]
 </EXECUTE>
 ---
-Tool: Organization Database
-Question: What operating system and software versions are running on `ALU-WEB-PROD-01`?
+Tool: Wazuh
+Question: Compare the number of failed logins from `203.0.113.75` against the total number of failed logins on `ALU-WEB-PROD-01` over the past week.
 Action Type: Search
 Input Parameters:
-  hostname: ALU-WEB-PROD-01
+  source_ip: 203.0.113.75
+  time_window: 7d
 <EXECUTE>
-SELECT * FROM asset_inventory WHERE hostname='ALU-WEB-PROD-01'
-</EXECUTE>
----
-Tool: Organization Database
-Question: Are there any recent changes to the environment that could explain the alert?
-Action Type: Search
-Input Parameters:
-  hostname: ALU-WEB-PROD-01
-  timeframe: 7d
-<EXECUTE>
-SELECT * FROM change_management WHERE hostname='ALU-WEB-PROD-01' AND timestamp > now() - interval '7 days'
+agent.name:"ALU-WEB-PROD-01" AND data.srcip:"203.0.113.75" AND data.status:"0xc000006d" AND @timestamp:[2024-05-21T10:30:20.890Z TO 2024-05-28T10:30:20.890Z]
 </EXECUTE>

@@ -1,50 +1,58 @@
 [
   {
     "command": {
-      "tool": "Velociraptor",
-      "question": "On host 'ALU-WEB-PROD-01', what was the parent process of the failed logon attempt?",
-      "query": "SELECT Name, CommandLine, PPID\nFROM processes(host=\"ALU-WEB-PROD-01\")\nWHERE UserName = \"alu-backupsvc$\" AND StartTime >= \"2024-05-21T10:55:00.123Z\" AND StartTime <= \"2024-05-21T11:05:00.123Z\""
-    },
-    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
-  },
-  {
-    "command": {
-      "tool": "Velociraptor",
-      "question": "What other processes were active at the time of the event? Are they related to backup services?",
-      "query": "SELECT Name, CommandLine, PPID\nWHERE StartTime >= \"2024-05-21T10:55:00.123Z\" AND StartTime <= \"2024-05-21T11:05:00.123Z\""
-    },
-    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
-  },
-  {
-    "command": {
       "tool": "Wazuh",
-      "question": "Has the host 'ALU-WEB-PROD-01' been scanned recently for vulnerabilities? Are there any critical issues related to Kerberos or SMB?",
-      "query": "agent.name:\"ALU-WEB-PROD-01\" AND data.ruleid:\"60204\" AND @timestamp:[2024-05-20T23:00:00.000Z TO 2024-05-21T22:59:59.999Z]"
+      "question": "Show all failed logons from IP `88.88.88.88` to `ALU-WEB-PROD-01` in the last 24 hours. Are there any patterns?",
+      "query": "agent.name:\"ALU-WEB-PROD-01\" AND data.destip:\"88.88.88.88\" AND data.event_id:\"4625\" AND @timestamp:[2024-05-21T11:00:00.123Z TO 2024-05-22T10:59:59.999Z]"
     },
     "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
   },
   {
     "command": {
+      "tool": "Velociraptor",
+      "question": "Search event logs on `ALU-WEB-PROD-01` for repeated failed logons from `88.88.88.88`.",
+      "query": "SELECT * FROM eventlogs(\n    host = \"ALU-WEB-PROD-01\",\n    eventid = 4625,\n    starttime >= \"2024-05-21T11:00:00.123Z\",\n    endtime <= \"2024-05-22T10:59:59.999Z\",\n    sourceip = \"88.88.88.88\"\n);"
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "MISP",
+      "question": "Is the IP address `88.88.88.88` present in MISP? What are its associated tags, events, and reputation?",
+      "query": "search(ip=\"88.88.88.88\")"
+    },
+    "result": "[SUCCESS] No attributes found in MISP for indicator: '88.88.88.88'"
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "Who is the owner of the account `alu-backupsvc$`? Is this a service account or a human user?",
+      "query": "SELECT * FROM users WHERE username = \"alu-backupsvc$\""
+    },
+    "result": "General search found match for asset 'ALU-WEB-PROD-01' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC\n\nGeneral search found match for asset '10.50.1.10' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC"
+  },
+  {
+    "command": {
       "tool": "Wazuh",
-      "question": "Check the host's security configuration for settings that could allow brute force attacks (e.g., account lockout policies).",
-      "query": "agent.name:\"ALU-WEB-PROD-01\" AND data.ruleid:\"60204\" AND @timestamp:[2024-05-20T23:00:00.000Z TO 2024-05-21T22:59:59.999Z] AND data.group:\"windows_security\" OR data.group:\"authentication_failures\""
+      "question": "Check for any recent changes to the permissions or attributes of the `alu-backupsvc$` account.",
+      "query": "agent.name:\"ALU-WEB-PROD-01\" AND data.username:\"alu-backupsvc$\" AND @timestamp:[2024-05-20T23:00:00.000Z TO 2024-05-21T12:00:00.000Z]"
     },
     "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
   },
   {
     "command": {
       "tool": "Organization Database",
-      "question": "Who is the owner of the account 'alu-backupsvc$'? Is this a service account or a human user?",
-      "query": "SELECT * FROM users WHERE username = 'alu-backupsvc$';"
+      "question": "What is the purpose of the `ALU-BCK-PROD-01` workstation? Is it used for backups or something else?",
+      "query": "SELECT * FROM workstations WHERE hostname = \"ALU-BCK-PROD-01\""
     },
     "result": "General search found match for asset 'ALU-WEB-PROD-01' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC\n\nGeneral search found match for asset '10.50.1.10' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC"
   },
   {
     "command": {
-      "tool": "Organization Database",
-      "question": "Have there been any recent successful logons using this account?",
-      "query": "SELECT * FROM logins WHERE username = 'alu-backupsvc$' ORDER BY timestamp DESC LIMIT 10;"
+      "tool": "Wazuh",
+      "question": "Search for any unusual activities involving the `ALU-BCK-PROD-01` workstation around the time of the alert.",
+      "query": "agent.name:\"ALU-BCK-PROD-01\" AND @timestamp:[2024-05-21T11:00:00.123Z TO 2024-05-21T12:00:00.123Z]"
     },
-    "result": "General search found match for asset 'ALU-WEB-PROD-01' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC\n\nGeneral search found match for asset '10.50.1.10' in asset data:\n          AssetID        AssetName       AssetType Hostname/IP     OwnerTeamID OwnerPersonID BusinessCriticality      Status       Location              OS                            Notes/Description LastMaintenance MaintenanceWindow\n0  ALU-ASSET-1001  ALU-WEB-PROD-01  Virtual Server  10.50.1.10  TEAM-ALU-INFRA   PPL-ALU-101                High  Production  DC-Aluskort-A  Windows Server  Hosts shop.aluskort.com e-commerce frontend      2024-04-15    Sun 1-3 AM UTC"
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
   }
 ]

@@ -1,92 +1,95 @@
 ### Reasoning Monologue
 
-1.  **Overall Analysis:** The alert is for a newly detected external device (T1092), which could indicate an attempt at data exfiltration or lateral movement. Since the host is part of a production environment, this requires immediate investigation.
-2.  **Strategy for Velociraptor Queries:** Given the broad nature of the technique, we should focus on both process activity and network behavior. Narrowing down the time frame to within 5 minutes of the alert will help us identify suspicious processes and connections.
-3.  **Strategy for Wazuh Queries:** We need to check if the host has been recently scanned for vulnerabilities and whether there are any existing issues related to removable media handling. Additionally, reviewing recent Windows Event Logs can provide more context about the device connection.
-4.  **Strategy for Organization Database Queries:** Understanding who has admin access to the host and whether they are aware of the alert is crucial. We also need to know the purpose of the host and whether it’s supposed to allow external devices. Finally, checking for recent policy changes related to removable media can help determine if this is a legitimate action or a potential breach.
+1.  **Overall Analysis:** The alert is for a suspicious USB device being recognized on a production web server. This could indicate a potential insider threat or a compromised host.
+2.  **Strategy for Velociraptor Queries:** Since we're dealing with a potentially malicious USB insertion, we should focus on understanding the current state of the host. We'll start with a broad process listing to see what was running at the time of detection, then move to network activity to check if anything unusual happened.
+3.  **Strategy for Wazuh Queries:** Given the nature of the alert, we want to know if this host has had similar issues in the past. We'll also check for any other alerts related to this host that might provide additional context.
+4.  **Strategy for Organization Database Queries:** We need to gather information about who has access to this host and what software is running on it. This will help us determine whether the USB insertion was authorized or if there are any known vulnerabilities that could be exploited.
+5.  **Strategy for Contextual Guidance Queries:** Finally, we want to understand the organizational context of this host. Knowing its role and whether it should normally recognize unknown devices will help us assess the severity of the situation.
 
 ### Execution Plan
 
 Tool: Velociraptor
-Question: On host 'ALU-WEB-PROD-01', what processes were active during the time of the event (`2024-05-21T10:30:12.567+0000`)?
+Question: On host 'ALU-WEB-PROD-01', what processes were active when the removable media was detected?
 Action Type: Search
 Input Parameters:
   hostname: ALU-WEB-PROD-01
-  time_window: 5m
 <EXECUTE>
-SELECT Name, CommandLine, StartTime
+SELECT Name, CommandLine, PID, PPID
 FROM processes(host="ALU-WEB-PROD-01")
-WHERE StartTime >= "2024-05-21T10:25:12.567Z" AND StartTime <= "2024-05-21T10:35:12.567Z"
-ORDER BY StartTime DESC LIMIT 20
+WHERE Timestamp >= "2024-05-21T10:25:12.567Z" AND Timestamp <= "2024-05-21T10:32:12.567Z"
+ORDER BY Timestamp DESC LIMIT 20
 </EXECUTE>
 ---
 Tool: Velociraptor
-Question: Was there any unusual network activity from this host around the timestamp?
+Question: Was there any unusual network activity originating from this host around the time of detection?
 Action Type: Search
 Input Parameters:
   hostname: ALU-WEB-PROD-01
   time_window: 5m
 <EXECUTE>
-SELECT Name, DestinationAddress, DestinationPort, StartTime
-FROM network(host="ALU-WEB-PROD-01")
-WHERE StartTime >= "2024-05-21T10:25:12.567Z" AND StartTime <= "2024-05-21T10:35:12.567Z"
-AND DestinationPort!= 80 AND DestinationPort!= 443
+SELECT StartTime, EndTime, Protocol, DestinationAddress, DestinationPort, BytesSent, BytesReceived
+FROM network_events(host="ALU-WEB-PROD-01")
+WHERE Timestamp >= "2024-05-21T10:25:12.567Z" AND Timestamp <= "2024-05-21T10:32:12.567Z"
+AND (DestinationAddress!= "::1" OR DestinationAddress!= "88.88.88.88")
+GROUP BY StartTime, EndTime, Protocol, DestinationAddress, DestinationPort, BytesSent, BytesReceived
+HAVING SUM(BytesSent) > 50000 OR SUM(BytesReceived) > 50000
 ORDER BY StartTime DESC LIMIT 20
 </EXECUTE>
 ---
 Tool: Wazuh
-Question: Has the host 'ALU-WEB-PROD-01' been recently scanned for vulnerabilities? Are there any critical findings related to removable media handling?
+Question: Has this host ever been flagged for unauthorized USB usage before?
 Action Type: Search
 Input Parameters:
   agent_name: ALU-WEB-PROD-01
-  time_window: 24h
+  usb_device: ABCDEF123456
+  time_window: 1d
 <EXECUTE>
-agent.name:"ALU-WEB-PROD-01" AND data.rule_id:"60227" AND @timestamp:[2024-05-20T10:30:12.567Z TO 2024-05-21T10:30:12.567Z]
+agent.name:"ALU-WEB-PROD-01" AND data.deviceid:"ABCDEF123456" AND rule.groups:"usb" AND @timestamp:[2024-05-20T10:30:00.000Z TO 2024-05-21T10:30:00.000Z]
 </EXECUTE>
 ---
 Tool: Wazuh
-Question: Check the Windows Event Logs for any recent alerts related to unauthorized devices being connected to this host.
+Question: Are there any recent alerts related to this host involving unexpected device recognition?
 Action Type: Search
 Input Parameters:
   agent_name: ALU-WEB-PROD-01
-  time_window: 24h
+  time_window: 1d
 <EXECUTE>
-agent.name:"ALU-WEB-PROD-01" AND data.event_id:"6005" AND @timestamp:[2024-05-20T10:30:12.567Z TO 2024-05-21T10:30:12.567Z]
+agent.name:"ALU-WEB-PROD-01" AND data.deviceid:"*" AND rule.groups:"device_recognition" AND @timestamp:[2024-05-20T10:30:00.000Z TO 2024-05-21T10:30:00.000Z]
 </EXECUTE>
 ---
 Tool: Organization Database
-Question: Who has administrative access to the host 'ALU-WEB-PROD-01'? Are they aware of this rule triggering?
+Question: Who has administrative access to 'ALU-WEB-PROD-01'? Could they have authorized the insertion of a USB drive?
+Action Type: Search
+Input Parameters:
+  hostname: ALU-WEB-PROD-01
+  admin_access: true
+<EXECUTE>
+SELECT username FROM users WHERE hostname="ALU-WEB-PROD-01" AND admin_access=true
+</EXECUTE>
+---
+Tool: Organization Database
+Question: What software versions are installed on this host? Are there any known vulnerabilities in those versions?
 Action Type: Search
 Input Parameters:
   hostname: ALU-WEB-PROD-01
 <EXECUTE>
-SELECT username FROM users WHERE host="ALU-WEB-PROD-01" AND role="administrator"
-</EXECUTE>
----
-Tool: Wazuh
-Question: Search for any recent logins by the user 'ALU-WEB-PROD-01$' across the domain. Are there any anomalies?
-Action Type: Search
-Input Parameters:
-  user: ALU-WEB-PROD-01$
-  time_window: 24h
-<EXECUTE>
-agent.name:"*" AND data.user:"ALU-WEB-PROD-01$" AND @timestamp:[2024-05-20T10:30:12.567Z TO 2024-05-21T10:30:12.567Z]
+SELECT name, version FROM applications WHERE hostname="ALU-WEB-PROD-01"
 </EXECUTE>
 ---
 Tool: Organization Database
-Question: What is the purpose of the host 'ALU-WEB-PROD-01'? Is it supposed to allow external devices?
+Question: When was the last time this host underwent a security audit? Did it pass?
 Action Type: Search
 Input Parameters:
   hostname: ALU-WEB-PROD-01
 <EXECUTE>
-SELECT description FROM hosts WHERE name="ALU-WEB-PROD-01"
+SELECT date, result FROM audits WHERE hostname="ALU-WEB-PROD-01" ORDER BY date DESC LIMIT 1
 </EXECUTE>
 ---
 Tool: Organization Database
-Question: Have there been any recent changes to security policies regarding removable media on this host?
+Question: What is the expected behavior of this host within the organization? Should it recognize unknown devices?
 Action Type: Search
 Input Parameters:
   hostname: ALU-WEB-PROD-01
 <EXECUTE>
-SELECT policy FROM policies WHERE host="ALU-WEB-PROD-01" AND type="removable_media" ORDER BY date DESC LIMIT 5
+SELECT description FROM roles WHERE hostname="ALU-WEB-PROD-01"
 </EXECUTE>

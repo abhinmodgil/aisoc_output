@@ -2,18 +2,18 @@
   {
     "command": {
       "tool": "Wazuh",
-      "question": "Show all POST requests to `/cart/add` on `ALU-WEB-PROD-01` in the last 24 hours. Are there any unusual patterns?",
-      "query": "agent.name:\"ALU-WEB-PROD-01\" AND data.http_method:\"POST\" AND data.url_path:\"/cart/add\" AND @timestamp:[2024-05-20T10:10:30.456Z TO 2024-05-21T10:10:30.456Z]"
+      "question": "Show all POST requests from Source IP `198.51.100.25` to Agent IP `10.50.1.10` in the last hour. Were there other suspicious requests?",
+      "query": "agent.name:\"ALU-WEB-PROD-01\" AND data.httpmethod:\"POST\" AND data.dstip:\"10.50.1.10\" AND data.srcip:\"198.51.100.25\" AND @timestamp:[2024-05-21T09:05:30.456Z TO 2024-05-21T10:20:30.456Z]"
     },
     "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
   },
   {
     "command": {
-      "tool": "Wazuh",
-      "question": "Search for any other alerts related to `ALU-WEB-PROD-01` in the last week. Are they related to DDoS attempts?",
-      "query": "agent.name:\"ALU-WEB-PROD-01\" AND @timestamp:[2024-05-14T10:10:30.456Z TO 2024-05-21T10:10:30.456Z]"
+      "tool": "Velociraptor",
+      "question": "Search web server logs on `ALU-WEB-PROD-01` for any POST requests from `198.51.100.25` that resulted in a 200 OK status.",
+      "query": "SELECT * FROM web_accesslog(host=\"ALU-WEB-PROD-01\") WHERE srcip=\"198.51.100.25\" AND httpstatuscode=200"
     },
-    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
   },
   {
     "command": {
@@ -26,8 +26,16 @@
   {
     "command": {
       "tool": "Velociraptor",
-      "question": "On host `ALU-WEB-PROD-01`, check the parent process of the web server (`w3wp.exe`) at the time of the alert. Was anything else happening around that time?",
-      "query": "SELECT Name, CommandLine, PPID\nFROM processes(host=\"ALU-WEB-PROD-01\")\nWHERE Name == \"w3wp.exe\""
+      "question": "On host `ALU-WEB-PROD-01`, what was the parent process of the web server process handling the `/cart/add` endpoint?",
+      "query": "SELECT ParentProcessId, ParentCommandLine, PID, CommandLine\nFROM processes(host=\"ALU-WEB-PROD-01\")\nWHERE PID IN (SELECT pid FROM web_accesslog(host=\"ALU-WEB-PROD-01\") WHERE urlpath=\"/cart/add\")"
+    },
+    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
+      "tool": "Velociraptor",
+      "question": "What child processes, network connections, or file modifications did this process initiate after receiving the POST request?",
+      "query": "SELECT ChildProcessId, ChildCommandLine, NetConnPid, NetConnRemoteAddress, FileModTime, FileModPath\nFROM processes(host=\"ALU-WEB-PROD-01\", pid=\"<PID_OF_WEB_SERVER_PROCESS>\")"
     },
     "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
   }

@@ -1,12 +1,15 @@
 ### Dimension: Process Behavior
-- [Velociraptor] On host 'ALU-SUPPORT-PROD-01', what is the full path of the `/tmp/.X11-unix/Xrootkit` file?
-- [Velociraptor] What is the current state of the Xrootkit process (`/usr/bin/xr`) on this host? Is it still running?
-- [Velociraptor] List all files created or modified within the past 24 hours in `/tmp/.X11-unix`. Are there any unusual files?
+- [Velociraptor] On host 'ALU-SUPPORT-PROD-01', what is the full path of the executable that created `/tmp/.X11-unix/Xrootkit`?
+- [Velociraptor] What other files were created or modified around the time `/tmp/.X11-unix/Xrootkit` appeared?
 
 ### Dimension: Host Vulnerability
-- [Wazuh] Has the host 'ALU-SUPPORT-PROD-01' been scanned recently for vulnerabilities? If so, were any related to rootkits or kernel exploits detected?
-- [Wazuh] Check the agent's log for any recent alerts related to rootkits or kernel-level threats.
+- [Wazuh] Has the host 'ALU-SUPPORT-PROD-01' ever had a rootkit detection before? Check the last 30 days of alerts.
+- [Wazuh] Are there any open ports on this host that could indicate compromise? Run a port scan.
+
+### Dimension: User Attribution
+- [Organization Database] Who has access to the 'ALU-SUPPORT-PROD-01' machine? Are there any recent changes to user permissions?
+- [Wazuh] Did any unusual logins occur around the time of the alert? Look for failed login attempts or unexpected remote sessions.
 
 ### Dimension: Contextual Guidance
-- [Organization Database] What is the purpose of the 'ALU-SUPPORT-PROD-01' host? Who manages it? Is it a critical production server?
-- [Organization Database] When was the last time this host underwent a security audit or penetration test? Was anything similar found then?
+- [Organization Database] What is the purpose of the 'ALU-SUPPORT-PROD-01' machine? Is it a critical asset?
+- [Organization Database] When was the last security audit performed on this host? Was anything noted as potentially vulnerable?

@@ -1,14 +1,15 @@
 ### Dimension: User Attribution
-- [Organization Database] Who has access to the 'alu-localadmin' account on 'ALU-WEB-DEV-01'? Are they authorized to change local admin accounts?
-- [Wazuh] Search for all changes made to the 'alu-localadmin' account in the last 30 days. Was this behavior expected?
+- [Organization Database] Who has access to the target account 'alu-localadmin'? Is it used by developers or IT staff?
+- [Wazuh] Check for recent logins using 'alu-localadmin' across the domain. Are they consistent with normal usage patterns?
 
 ### Dimension: Process Behavior
-- [Velociraptor] On host 'ALU-WEB-DEV-01', what was the parent process of the event that modified the 'alu-localadmin' account?
-- [Velociraptor] What other processes were running at the time of this modification? Did they appear legitimate?
+- [Velociraptor] On host 'ALU-WEB-DEV-01', what processes were running when the account change occurred?
+- [Velociraptor] Did any new processes spawn after the account change event?
 
 ### Dimension: Host Vulnerability
-- [Wazuh] Has 'ALU-WEB-DEV-01' been scanned for vulnerabilities recently? Are there any critical issues related to local account management?
+- [Wazuh] Has the host 'ALU-WEB-DEV-01' been recently patched against privilege escalation vulnerabilities?
+- [Wazuh] Are there any open ports or services running on this host that could allow unauthorized changes?
 
 ### Dimension: Contextual Guidance
-- [Organization Database] What is the purpose of the 'alu-localadmin' account? Should it be used for administrative tasks?
-- [Organization Database] When was the 'alu-localadmin' account created? By whom?
+- [Organization Database] When was the last time 'alu-localadmin' was used for legitimate purposes?
+- [Organization Database] What are the typical permissions assigned to 'alu-localadmin'?

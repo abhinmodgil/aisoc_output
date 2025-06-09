@@ -1,5 +1,5 @@
 ### Executive Summary
-A denial-of-service attack was attempted against a high-criticality web application, but the attacker did not succeed due to rate-limiting controls.
+A large volume of POST requests to a critical e-commerce application endpoint may indicate a denial-of-service attack, though the lack of forensic data prevents a definitive conclusion.
 
 ### Final Verdict
 **Suspicious**
@@ -8,9 +8,9 @@ A denial-of-service attack was attempted against a high-criticality web applicat
 **Medium**
 
 ### Justification
-The final risk score of 36 indicates a moderate level of concern. While the "IOC in Threat Intel" score of 100 confirms the source IP is not a known threat actor, the "Network Behavior" score of 0 reveals a critical visibility gap regarding the actual impact of the attack. The "Process Behavior" score also scored 0, suggesting a lack of forensic data about the attacker’s activities. Despite the failed attack, the high criticality of the target and the unusual volume of traffic warrant further investigation to understand the intent and capabilities of the attacker.
+The final risk score of 36 indicates a moderate level of concern. The "IOC in Threat Intel" score of 100 confirms the source IP is not a known threat actor. However, the "Network Behavior" score of 0 means there is a critical visibility gap regarding whether these requests were legitimate traffic or part of an attack. The high criticality of the asset combined with the unusual request pattern warrants further investigation.
 
 ### Recommended Actions
-- **Forensic Analysis:** Run live forensics on `ALU-WEB-PROD-01` to determine if any malicious payloads were delivered during the attack.
-- **Rate-Limiting Review:** Verify that rate-limiting thresholds are set appropriately to detect and mitigate future attacks.
-- **Alert Tuning:** Adjust the detection rule to reduce noise by excluding expected traffic patterns like legitimate shopping cart additions.
+- **Forensic Analysis:** Run live forensics on `ALU-WEB-PROD-01` to determine if the incoming POST requests were legitimate customer transactions or part of an automated attack.
+- **Rate Limiting:** Implement rate limiting rules on the affected endpoint to protect against future attacks.
+- **Alert Tuning:** Adjust the detection rule to trigger only when multiple unique users make similar requests within a short timeframe.

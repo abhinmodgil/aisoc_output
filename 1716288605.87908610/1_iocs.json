@@ -6,5 +6,31 @@
   "MITRE Technique ID": [
     "T1098 \u2013 Account Manipulation",
     "T1484 \u2013 Domain Policy Modification"
-  ]
+  ],
+  "Agent ID": "ALU-001",
+  "Agent Hostname": "ALU-WEB-PROD-01",
+  "Agent IP": "10.50.1.10",
+  "Labels": "aluskort-prod",
+  "Subject SID": "S-1-5-21-1234567890-1234567890-1234567890-1121",
+  "Subject Username": "anika.sharma",
+  "Subject Domain": "ALUSKORT-PROD",
+  "Subject Logon ID": "0xEFE0123",
+  "Member SID": "S-1-5-21-987654321-987654321-987654321-505",
+  "Member Name": "temp_admin_svc",
+  "Group Name": "Administrators",
+  "Group Domain": "Builtin",
+  "Keywords": "Audit Success",
+  "Severity": "AUDIT_SUCCESS",
+  "Opcode": "Info Level",
+  "Task Category": "Group Management",
+  "Provider Name": "Microsoft-Windows-Security-Auditing",
+  "Provider GUID": "{54849625-5478-4994-A5BA-3E3B0328C30D}",
+  "Computer": "ALU-WEB-PROD-01",
+  "Event Record ID": "711234",
+  "Process ID": "884",
+  "Thread ID": "916",
+  "Channel": "Security",
+  "Level": "0",
+  "Version": "0",
+  "Event ID": "4732"
 }

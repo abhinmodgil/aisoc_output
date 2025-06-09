@@ -2,23 +2,23 @@
   "MITRE_Technique_ID": "T1014",
   "Technique_Name": "Rootkit",
   "Critical_Investigation_Dimensions": [
-    "Process Behavior"
+    "Process Behavior",
+    "Host Vulnerability"
   ],
   "Supporting_Investigation_Dimensions": [
-    "Host Vulnerability",
+    "User Attribution",
     "Contextual Guidance"
   ],
   "Low_Priority_Dimensions": [
-    "User Attribution",
     "IOC in Threat Intel",
     "Network Behavior"
   ],
   "Normalized_Dimension_Weights": {
-    "Process Behavior": 40,
-    "Host Vulnerability": 30,
-    "Contextual Guidance": 20,
-    "User Attribution": 5,
+    "Process Behavior": 30,
+    "Host Vulnerability": 25,
+    "User Attribution": 20,
+    "Contextual Guidance": 15,
     "IOC in Threat Intel": 5,
-    "Network Behavior": 0
+    "Network Behavior": 5
   }
 }

@@ -2,23 +2,23 @@
   "MITRE_Technique_ID": "T1110",
   "Technique_Name": "Brute Force",
   "Critical_Investigation_Dimensions": [
-    "Process Behavior",
-    "Host Vulnerability"
+    "Network Behavior",
+    "IOC in Threat Intel"
   ],
   "Supporting_Investigation_Dimensions": [
     "User Attribution",
     "Contextual Guidance"
   ],
   "Low_Priority_Dimensions": [
-    "IOC in Threat Intel",
-    "Network Behavior"
+    "Process Behavior",
+    "Host Vulnerability"
   ],
   "Normalized_Dimension_Weights": {
-    "Process Behavior": 30,
-    "Host Vulnerability": 25,
-    "User Attribution": 20,
-    "Contextual Guidance": 15,
-    "IOC in Threat Intel": 5,
-    "Network Behavior": 5
+    "Network Behavior": 35,
+    "IOC in Threat Intel": 30,
+    "User Attribution": 15,
+    "Contextual Guidance": 10,
+    "Process Behavior": 5,
+    "Host Vulnerability": 5
   }
 }

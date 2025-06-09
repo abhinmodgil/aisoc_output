@@ -2,23 +2,23 @@
   "MITRE_Technique_ID": "T1595.002",
   "Technique_Name": "Vulnerability Scanning",
   "Critical_Investigation_Dimensions": [
-    "IOC in Threat Intel"
+    "IOC in Threat Intel",
+    "Network Behavior"
   ],
   "Supporting_Investigation_Dimensions": [
     "Process Behavior",
-    "Host Vulnerability",
-    "Contextual Guidance"
+    "Host Vulnerability"
   ],
   "Low_Priority_Dimensions": [
     "User Attribution",
-    "Network Behavior"
+    "Contextual Guidance"
   ],
   "Normalized_Dimension_Weights": {
     "IOC in Threat Intel": 40,
-    "Process Behavior": 20,
-    "Host Vulnerability": 20,
-    "Contextual Guidance": 10,
+    "Network Behavior": 30,
+    "Process Behavior": 15,
+    "Host Vulnerability": 10,
     "User Attribution": 5,
-    "Network Behavior": 5
+    "Contextual Guidance": 0
   }
 }

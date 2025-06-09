@@ -1,32 +1,33 @@
 ### Reasoning Monologue
 
-1.  **Overall Analysis:** The alert is for a potential DoS attack (T1498), likely involving a bot targeting the `/cart/add` endpoint. Since it's internal, we should focus on identifying the source and impact across the environment.
-2.  **Strategy for Wazuh Queries:** We need to confirm if this is part of a larger pattern. A broader time range (last 24 hours) will help us identify whether this is isolated or ongoing. Additionally, searching for related alerts can reveal additional context.
-3.  **Strategy for MISP Query:** The source IP is suspicious. Checking MISP for known threats can provide valuable insights into its history and associations.
-4.  **Strategy for Velociraptor Query:** Understanding the local context is crucial. Knowing which process initiated the request and whether there were concurrent activities can help determine intent and scope.
+1.  **Overall Analysis:** The alert is for a potential DDoS attack (T1498), likely involving a bot targeting the e-commerce system. The attacker appears to have used a private IP, which could indicate internal reconnaissance or a compromised device.
+2.  **Strategy for Wazuh Query:** Since we know the source IP (`198.51.100.25`) and destination IP (`88.88.88.88`), we can filter for POST requests specifically from that source within a reasonable time frame (e.g., 1 hour).
+3.  **Strategy for Velociraptor Query:** We want to confirm if the POST request triggered a response (HTTP 200) and whether it was handled by the expected web server process. Additionally, we should check for any unusual child processes, network connections, or file changes initiated by the web server process.
+4.  **Strategy for MISP Query:** Given the nature of the attack, we should verify if the source IP has been flagged as malicious in MISP. If it exists, we'll gather additional context such as related events, tags, and reputation scores.
 
 ### Execution Plan
 
 Tool: Wazuh
-Question: Show all POST requests to `/cart/add` on `ALU-WEB-PROD-01` in the last 24 hours. Are there any unusual patterns?
+Question: Show all POST requests from Source IP `198.51.100.25` to Agent IP `10.50.1.10` in the last hour. Were there other suspicious requests?
 Action Type: Search
 Input Parameters:
-  agent_name: ALU-WEB-PROD-01
+  source_ip: 198.51.100.25
+  destination_ip: 10.50.1.10
   http_method: POST
-  url_path: /cart/add
-  time_window: 24h
+  time_window: 1h
 <EXECUTE>
-agent.name:"ALU-WEB-PROD-01" AND data.http_method:"POST" AND data.url_path:"/cart/add" AND @timestamp:[2024-05-20T10:10:30.456Z TO 2024-05-21T10:10:30.456Z]
+agent.name:"ALU-WEB-PROD-01" AND data.httpmethod:"POST" AND data.dstip:"10.50.1.10" AND data.srcip:"198.51.100.25" AND @timestamp:[2024-05-21T09:05:30.456Z TO 2024-05-21T10:20:30.456Z]
 </EXECUTE>
 ---
-Tool: Wazuh
-Question: Search for any other alerts related to `ALU-WEB-PROD-01` in the last week. Are they related to DDoS attempts?
+Tool: Velociraptor
+Question: Search web server logs on `ALU-WEB-PROD-01` for any POST requests from `198.51.100.25` that resulted in a 200 OK status.
 Action Type: Search
 Input Parameters:
-  agent_name: ALU-WEB-PROD-01
-  time_window: 7d
+  hostname: ALU-WEB-PROD-01
+  source_ip: 198.51.100.25
+  http_status_code: 200
 <EXECUTE>
-agent.name:"ALU-WEB-PROD-01" AND @timestamp:[2024-05-14T10:10:30.456Z TO 2024-05-21T10:10:30.456Z]
+SELECT * FROM web_accesslog(host="ALU-WEB-PROD-01") WHERE srcip="198.51.100.25" AND httpstatuscode=200
 </EXECUTE>
 ---
 Tool: MISP
@@ -39,14 +40,24 @@ search(ip="198.51.100.25")
 </EXECUTE>
 ---
 Tool: Velociraptor
-Question: On host `ALU-WEB-PROD-01`, check the parent process of the web server (`w3wp.exe`) at the time of the alert. Was anything else happening around that time?
+Question: On host `ALU-WEB-PROD-01`, what was the parent process of the web server process handling the `/cart/add` endpoint?
 Action Type: Search
 Input Parameters:
   hostname: ALU-WEB-PROD-01
-  process_name: w3wp.exe
-  time_window: 5m
+  path: /cart/add
 <EXECUTE>
-SELECT Name, CommandLine, PPID
+SELECT ParentProcessId, ParentCommandLine, PID, CommandLine
 FROM processes(host="ALU-WEB-PROD-01")
-WHERE Name == "w3wp.exe"
+WHERE PID IN (SELECT pid FROM web_accesslog(host="ALU-WEB-PROD-01") WHERE urlpath="/cart/add")
+</EXECUTE>
+---
+Tool: Velociraptor
+Question: What child processes, network connections, or file modifications did this process initiate after receiving the POST request?
+Action Type: Search
+Input Parameters:
+  hostname: ALU-WEB-PROD-01
+  parent_process_id: <PID_OF_WEB_SERVER_PROCESS>
+<EXECUTE>
+SELECT ChildProcessId, ChildCommandLine, NetConnPid, NetConnRemoteAddress, FileModTime, FileModPath
+FROM processes(host="ALU-WEB-PROD-01", pid="<PID_OF_WEB_SERVER_PROCESS>")
 </EXECUTE>

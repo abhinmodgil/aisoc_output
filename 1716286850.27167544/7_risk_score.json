@@ -2,5 +2,5 @@
   "alert_id": "1716286850.27167544",
   "final_risk_score": 55,
   "acm_used": 1.2,
-  "breakdown": "  - IOC in Threat Intel:\n    - (Score: 50 * W: 40% / 100) * VPM: 1.2 * ACM: 1.2 = 28.80\n  - Process Behavior:\n    - (Score: 0 * W: 20% / 100) * VPM: 1.5 * ACM: 1.2 = 0.00\n  - Host Vulnerability:\n    - (Score: 50 * W: 20% / 100) * VPM: 1.2 * ACM: 1.2 = 14.40\n  - Contextual Guidance:\n    - (Score: 100 * W: 10% / 100) * VPM: 1.0 * ACM: 1.2 = 12.00\n  - User Attribution: No score available. Contribution is 0.\n  - Network Behavior: No score available. Contribution is 0."
+  "breakdown": "  - IOC in Threat Intel:\n    - (Score: 100 * W: 40% / 100) * VPM: 1.0 * ACM: 1.2 = 48.00\n  - Network Behavior:\n    - (Score: 0 * W: 30% / 100) * VPM: 1.5 * ACM: 1.2 = 0.00\n  - Process Behavior:\n    - (Score: 0 * W: 15% / 100) * VPM: 1.5 * ACM: 1.2 = 0.00\n  - Host Vulnerability:\n    - (Score: 50 * W: 10% / 100) * VPM: 1.2 * ACM: 1.2 = 7.20\n  - User Attribution: No score available. Contribution is 0.\n  - Contextual Guidance: No score available. Contribution is 0."
 }

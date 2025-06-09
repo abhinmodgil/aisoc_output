@@ -1,15 +1,14 @@
-### Dimension: Process Behavior
-- [Velociraptor] On host 'ALU-WEB-PROD-01', what was the parent process of the failed logon attempt?
-- [Velociraptor] What other processes were active at the time of the event? Are they related to backup services?
+### Dimension: Network Behavior
+- [Wazuh] Show all failed logons from IP `10.50.1.30` to `ALU-WEB-PROD-01` in the last 24 hours. Are there any patterns?
+- [Velociraptor] Search event logs on `ALU-WEB-PROD-01` for repeated failed logons from `10.50.1.30`.
 
-### Dimension: Host Vulnerability
-- [Wazuh] Has the host 'ALU-WEB-PROD-01' been scanned recently for vulnerabilities? Are there any critical issues related to Kerberos or SMB?
-- [Wazuh] Check the host's security configuration for settings that could allow brute force attacks (e.g., account lockout policies).
+### Dimension: IOC in Threat Intel
+- [MISP] Is the IP address `10.50.1.30` present in MISP? What are its associated tags, events, and reputation?
 
 ### Dimension: User Attribution
-- [Organization Database] Who is the owner of the account 'alu-backupsvc$'? Is this a service account or a human user?
-- [Wazuh] Have there been any recent successful logons using this account?
+- [Organization Database] Who is the owner of the account `alu-backupsvc$`? Is this a service account or a human user?
+- [Wazuh] Check for any recent changes to the permissions or attributes of the `alu-backupsvc$` account.
 
 ### Dimension: Contextual Guidance
-- [Organization Database] What is the purpose of the 'alu-backupsvc$' account? Is it used for scheduled backups or something else?
-- [Organization Database] Are there any documented procedures for handling repeated login failures involving this account?
+- [Organization Database] What is the purpose of the `ALU-BCK-PROD-01` workstation? Is it used for backups or something else?
+- [Wazuh] Search for any unusual activities involving the `ALU-BCK-PROD-01` workstation around the time of the alert.

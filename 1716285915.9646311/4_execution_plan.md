@@ -1,9 +1,9 @@
 ### Reasoning Monologue
 
-1.  **Overall Analysis:** The alert is for a possible rootkit (T1014), which could indicate a compromised system. Since the alert is from a production environment, this requires immediate investigation.
-2.  **Strategy for Velociraptor Queries:** Given the nature of the alert, we should focus on the affected process itself. We'll start with basic information about the process and then move to deeper analysis of its behavior.
-3.  **Strategy for Wazuh Queries:** Since the alert involves a potential compromise of the operating system, we should check if there are any known vulnerabilities in the Linux kernel that might have been exploited. Additionally, running a rootkit detection module can help identify hidden threats.
-4.  **Strategy for Organization Database Queries:** Understanding the role of the affected host and who has access to it will provide crucial context for our investigation.
+1.  **Overall Analysis:** The alert is for a possible rootkit (T1014), which could indicate a compromised system. Since the alert is triggered by a root-level check, it requires immediate attention.
+2.  **Strategy for Velociraptor Queries:** Given the nature of the alert, we should focus on the affected process (`PID=2508`) and its environment. We'll start with basic process information and then move to handle/network analysis.
+3.  **Strategy for Waziraptor Queries:** The agent has reported itself as vulnerable to recent Linux kernel exploits. We must confirm if patches have been applied. Additionally, searching for past alerts can help us determine if this is part of a recurring issue.
+4.  **Strategy for Organization Database Queries:** Knowing the role of the affected host and who manages it will provide crucial context for our investigation. It may also help prioritize response efforts based on business impact.
 
 ### Execution Plan
 
@@ -11,59 +11,57 @@ Tool: Velociraptor
 Question: Inspect process `2508` on host `ALU-ORDPROC-PROD-01`. What is its full command line? Who started it?
 Action Type: Search
 Input Parameters:
-  hostname: ALU-ORDPROC-PROD-01
   pid: 2508
+  hostname: ALU-ORDPROC-PROD-01
 <EXECUTE>
-SELECT * FROM get_process(pid=2508,host="ALU-ORDPROC-PROD-01")
+SELECT * FROM get_process(pid=2508, host="ALU-ORDPROC-PROD-01")
 </EXECUTE>
 ---
 Tool: Velociraptor
-Question: List all open files and network sockets associated with process `2508`. Are they legitimate?
+Question: List all open handles and network connections for PID `2508`. Are they consistent with normal behavior?
 Action Type: Search
 Input Parameters:
-  hostname: ALU-ORDPROC-PROD-01
   pid: 2508
 <EXECUTE>
-SELECT * FROM list_files(pid=2508,host="ALU-ORDPROC-PROD-01")
-SELECT * FROM list_sockets(pid=2508,host="ALU-ORDPROC-PROD-01")
+SELECT * FROM list_handles(pid=2508, host="ALU-ORDPROC-PROD-01")
+SELECT * FROM list_network_connections(pid=2508, host="ALU-ORDPROC-PROD-01")
 </EXECUTE>
 ---
 Tool: Wazuh
-Question: Check the agent's vulnerability database for any recent updates related to Linux kernel exploits.
+Question: Check the agent's vulnerability report for `ALU-ORDPROC-PROD-01`. Has it been patched against recent Linux kernel exploits?
 Action Type: Search
 Input Parameters:
-  agent_id: ALU-003
-  agent_hostname: ALU-ORDPROC-PROD-01
+  hostname: ALU-ORDPROC-PROD-01
+  decoder: rootcheck
+<EXECUTE>
+agent.name:"ALU-ORDPROC-PROD-01" AND data.decoder:"rootcheck" AND @timestamp:[2024-05-20T09:00:00.000Z TO 2024-05-21T09:00:00.000Z]
+</EXECUTE>
+---
+Tool: Wazuh
+Question: Search for any previous alerts related to `rootcheck` on this host. Have similar issues occurred before?
+Action Type: Search
+Input Parameters:
+  hostname: ALU-ORDPROC-PROD-01
+  decoder: rootcheck
   time_window: 7d
 <EXECUTE>
-agent.id:"ALU-003" AND data.os:"Linux" AND data.package_name:"kernel" AND data.package_version:[* TO *]
-</EXECUTE>
----
-Tool: Wazuh
-Question: Run a quick scan using the Wazuh rootkit detection module against the host.
-Action Type: Execute
-Input Parameters:
-  agent_id: ALU-003
-  agent_hostname: ALU-ORDPROC-PROD-01
-<EXECUTE>
-wazuh-rootkit
+agent.name:"ALU-ORDPROC-PROD-01" AND data.decoder:"rootcheck" AND @timestamp:[2024-05-14T09:00:00.000Z TO 2024-05-21T09:00:00.000Z]
 </EXECUTE>
 ---
 Tool: Organization Database
-Question: What is the purpose of the `ALU-ORDPROC-PROD-01` host? Is it a production server?
+Question: What role does `ALU-ORDPROC-PROD-01` play in the organization? Is it critical infrastructure?
 Action Type: Search
 Input Parameters:
   hostname: ALU-ORDPROC-PROD-01
 <EXECUTE>
-SELECT * FROM hosts WHERE name = "ALU-ORDPROC-PROD-01"
+SELECT role, importance FROM hosts WHERE name="ALU-ORDPROC-PROD-01"
 </EXECUTE>
 ---
 Tool: Organization Database
-Question: Who has access to this host? Can we confirm whether the user who triggered the alert (`root`) is authorized to run such a process?
+Question: Who manages this machine? Can we reach out to them directly for more context?
 Action Type: Search
 Input Parameters:
   hostname: ALU-ORDPROC-PROD-01
-  username: root
 <EXECUTE>
-SELECT * FROM users WHERE name = "root" AND assigned_hosts LIKE "%ALU-ORDPROC-PROD-01%"
+SELECT manager_email FROM hosts WHERE name="ALU-ORDPROC-PROD-01"
 </EXECUTE>

@@ -2,56 +2,64 @@
   {
     "command": {
       "tool": "Velociraptor",
-      "question": "On host 'ALU-SUPPORT-PROD-01', what is the full path of the `/tmp/.X11-unix/Xrootkit` file?",
-      "query": "SELECT Name, FilePath, CreationTime, ModificationTime FROM filesystem(host=\"ALU-SUPPORT-PROD-01\") WHERE FilePath = \"/tmp/.X11-unix/Xrootkit\""
+      "question": "On host 'ALU-SUPPORT-PROD-01', what is the full path of the executable that created `/tmp/.X11-unix/Xrootkit`?",
+      "query": "SELECT Name, CommandLine, PPID, CreationTime\nFROM processes(host=\"ALU-SUPPORT-PROD-01\")\nWHERE FilePath = \"/tmp/.X11-unix/Xrootkit\"\nORDER BY CreationTime DESC LIMIT 1"
     },
     "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
   },
   {
     "command": {
       "tool": "Velociraptor",
-      "question": "What is the current state of the Xrootkit process (`/usr/bin/xr`) on this host? Is it still running?",
-      "query": "SELECT Name, CommandLine, PPID, StartTime, EndTime FROM processes(host=\"ALU-SUPPORT-PROD-01\") WHERE CommandLine =~ \"/usr/bin/xr\""
-    },
-    "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
-  },
-  {
-    "command": {
-      "tool": "Velociraptor",
-      "question": "List all files created or modified within the past 24 hours in `/tmp/.X11-unix`. Are there any unusual files?",
-      "query": "SELECT Name, FilePath, CreationTime, ModificationTime FROM filesystem(host=\"ALU-SUPPORT-PROD-01\", dirPath=\"/tmp/.X11-unix\") WHERE CreationTime > now() - 24 * 3600 OR ModificationTime > now() - 24 * 3600"
+      "question": "What other files were created or modified around the time `/tmp/.X11-unix/Xrootkit` appeared?",
+      "query": "SELECT Name, FilePath, CreationTime\nFROM processes(host=\"ALU-SUPPORT-PROD-01\")\nWHERE FilePath LIKE \"/tmp/%\"\nAND CreationTime >= \"2024-05-21T10:10:45.789Z\"\nAND CreationTime <= \"2024-05-21T10:20:45.789Z\"\nGROUP BY Name, FilePath\nHAVING COUNT(*) > 1"
     },
     "result": "[SIMULATION] Velociraptor artifact collection was dispatched, but this is a simulation so no data was returned."
   },
   {
     "command": {
       "tool": "Wazuh",
-      "question": "Has the host 'ALU-SUPPORT-PROD-01' been scanned recently for vulnerabilities? If so, were any related to rootkits or kernel exploits detected?",
-      "query": "agent.name:\"ALU-SUPPORT-PROD-01\" AND data.vulnerability_type:(rootkit OR kernel exploit) AND @timestamp:[2024-05-14T10:15:45.789Z TO 2024-05-21T10:15:45.789Z]"
+      "question": "Has the host 'ALU-SUPPORT-PROD-01' ever had a rootkit detection before? Check the last 30 days of alerts.",
+      "query": "agent.name:\"ALU-SUPPORT-PROD-01\" AND data.rule.description:\"Possible kernel level rootkit\" AND @timestamp:[2024-04-22T00:00:00.000Z TO 2024-05-21T10:25:45.789Z]"
     },
     "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
   },
   {
     "command": {
       "tool": "Wazuh",
-      "question": "Check the agent's log for any recent alerts related to rootkits or kernel-level threats.",
-      "query": "agent.name:\"ALU-SUPPORT-PROD-01\" AND data.rule.description:(rootkit OR kernel exploit) AND @timestamp:[2024-05-14T10:15:45.789Z TO 2024-05-21T10:15:45.789Z]"
+      "question": "Are there any open ports on this host that could indicate compromise? Run a port scan.",
+      "query": "agent.name:\"ALU-SUPPORT-PROD-01\" AND data.port:>1024 AND @timestamp:[2024-05-21T09:30:00.000Z TO 2024-05-21T10:40:00.000Z]"
     },
     "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
   },
   {
     "command": {
       "tool": "Organization Database",
-      "question": "What is the purpose of the 'ALU-SUPPORT-PROD-01' host? Who manages it? Is it a critical production server?",
-      "query": "SELECT * FROM hosts WHERE name='ALU-SUPPORT-PROD-01'"
+      "question": "Who has access to the 'ALU-SUPPORT-PROD-01' machine? Are there any recent changes to user permissions?",
+      "query": "SELECT * FROM users WHERE host=\"ALU-SUPPORT-PROD-01\" ORDER BY change_date DESC LIMIT 10;"
     },
     "result": "General search found match for asset 'ALU-SUPPORT-PROD-01' in asset data:\n           AssetID            AssetName       AssetType Hostname/IP    OwnerTeamID OwnerPersonID BusinessCriticality      Status         Location            OS                                               Notes/Description LastMaintenance MaintenanceWindow\n12  ALU-ASSET-1013  ALU-SUPPORT-PROD-01  Virtual Server  10.60.8.10  TEAM-ALU-ITSM   PPL-ALU-601              Medium  Production  Azure West US 2  Linux Ubuntu  Hosts internal Support Ticketing system (support.aluskort.net)      2024-05-05    Sat 4-5 AM UTC\n\nGeneral search found match for asset '10.60.8.10' in asset data:\n           AssetID            AssetName       AssetType Hostname/IP    OwnerTeamID OwnerPersonID BusinessCriticality      Status         Location            OS                                               Notes/Description LastMaintenance MaintenanceWindow\n12  ALU-ASSET-1013  ALU-SUPPORT-PROD-01  Virtual Server  10.60.8.10  TEAM-ALU-ITSM   PPL-ALU-601              Medium  Production  Azure West US 2  Linux Ubuntu  Hosts internal Support Ticketing system (support.aluskort.net)      2024-05-05    Sat 4-5 AM UTC"
   },
   {
     "command": {
+      "tool": "Wazuh",
+      "question": "Did any unusual logins occur around the time of the alert? Look for failed login attempts or unexpected remote sessions.",
+      "query": "agent.name:\"ALU-SUPPORT-PROD-01\" AND data.event_id:4625 AND @timestamp:[2024-05-21T10:00:00.000Z TO 2024-05-21T10:50:00.000Z]"
+    },
+    "result": "[SIMULATION] Wazuh query was sent for execution, but this is a simulation so no data was returned."
+  },
+  {
+    "command": {
       "tool": "Organization Database",
-      "question": "When was the last time this host underwent a security audit or penetration test? Was anything similar found then?",
-      "query": "SELECT * FROM audits WHERE host='ALU-SUPPORT-PROD-01' AND type IN ('security audit', 'penetration test') AND date >= DATE_SUB(NOW(), INTERVAL 12 MONTH)"
+      "question": "What is the purpose of the 'ALU-SUPPORT-PROD-01' machine? Is it a critical asset?",
+      "query": "SELECT * FROM assets WHERE name=\"ALU-SUPPORT-PROD-01\";"
+    },
+    "result": "Found match for 'ALU-SUPPORT-PROD-01' in 'assets.xlsx':\n           AssetID            AssetName       AssetType Hostname/IP    OwnerTeamID OwnerPersonID BusinessCriticality      Status         Location            OS                                               Notes/Description LastMaintenance MaintenanceWindow\n12  ALU-ASSET-1013  ALU-SUPPORT-PROD-01  Virtual Server  10.60.8.10  TEAM-ALU-ITSM   PPL-ALU-601              Medium  Production  Azure West US 2  Linux Ubuntu  Hosts internal Support Ticketing system (support.aluskort.net)      2024-05-05    Sat 4-5 AM UTC"
+  },
+  {
+    "command": {
+      "tool": "Organization Database",
+      "question": "When was the last security audit performed on this host? Was anything noted as potentially vulnerable?",
+      "query": "SELECT * FROM audits WHERE host=\"ALU-SUPPORT-PROD-01\" ORDER BY date DESC LIMIT 1;"
     },
     "result": "General search found match for asset 'ALU-SUPPORT-PROD-01' in asset data:\n           AssetID            AssetName       AssetType Hostname/IP    OwnerTeamID OwnerPersonID BusinessCriticality      Status         Location            OS                                               Notes/Description LastMaintenance MaintenanceWindow\n12  ALU-ASSET-1013  ALU-SUPPORT-PROD-01  Virtual Server  10.60.8.10  TEAM-ALU-ITSM   PPL-ALU-601              Medium  Production  Azure West US 2  Linux Ubuntu  Hosts internal Support Ticketing system (support.aluskort.net)      2024-05-05    Sat 4-5 AM UTC\n\nGeneral search found match for asset '10.60.8.10' in asset data:\n           AssetID            AssetName       AssetType Hostname/IP    OwnerTeamID OwnerPersonID BusinessCriticality      Status         Location            OS                                               Notes/Description LastMaintenance MaintenanceWindow\n12  ALU-ASSET-1013  ALU-SUPPORT-PROD-01  Virtual Server  10.60.8.10  TEAM-ALU-ITSM   PPL-ALU-601              Medium  Production  Azure West US 2  Linux Ubuntu  Hosts internal Support Ticketing system (support.aluskort.net)      2024-05-05    Sat 4-5 AM UTC"
   }
